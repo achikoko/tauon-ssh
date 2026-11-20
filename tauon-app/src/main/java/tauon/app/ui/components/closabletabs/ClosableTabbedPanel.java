@@ -13,6 +13,7 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -64,6 +65,8 @@ public class ClosableTabbedPanel extends JPanel {
     /** The top-right group's "+" button followed by the caller's extra buttons. */
     private final JPanel buttonsBox;
     private final PropertyChangeListener focusListener = e -> onFocusChanged((Component) e.getNewValue());
+    /** While a tab is dragged: Esc cancels the drag, whichever component has the focus. */
+    private final KeyEventDispatcher escapeCancelsDrag = this::onKeyWhileDragging;
 
     private TabGroup activeGroup;
     private TabGroup buttonsBoxGroup;
@@ -465,6 +468,7 @@ public class ClosableTabbedPanel extends JPanel {
             drag.dragging = true;
             drag.tab.setDragged(true);
             setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(escapeCancelsDrag);
         }
         if (drag.dragging) {
             drag.at = p;
@@ -483,13 +487,36 @@ public class ClosableTabbedPanel extends JPanel {
             select(d.tab); // a click: a press and release that did not move far enough to drag
             return;
         }
-        d.tab.setDragged(false);
-        setCursor(null);
-        overlay.repaint();
+        endDrag(d);
         if (d.drop != null && d.tab.group != null) {
             LOG.trace("Dropping tab {} into group {} (index {}, edge {})", d.tab.getName(), d.drop.group.getName(), d.drop.index, d.drop.edge);
             applyDrop(d.tab, d.drop);
         }
+    }
+
+    private boolean onKeyWhileDragging(KeyEvent e) {
+        if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_ESCAPE && drag != null && drag.dragging) {
+            cancelDrag();
+            return true; // consumed: the focused component doesn't get it
+        }
+        return false;
+    }
+
+    /** Esc: the tab stays where it was; the rest of the gesture (more drags, the release) is ignored. */
+    void cancelDrag() {
+        Drag d = drag;
+        drag = null;
+        if (d != null && d.dragging) {
+            LOG.trace("Drag of tab {} cancelled", d.tab.getName());
+            endDrag(d);
+        }
+    }
+
+    private void endDrag(Drag d) {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(escapeCancelsDrag);
+        d.tab.setDragged(false);
+        setCursor(null);
+        overlay.repaint();
     }
 
     /** Paints where a dragged tab would land, and its title by the pointer. Transparent to the mouse. */

@@ -9,6 +9,7 @@ import tauon.app.ui.laf.AppSkinLight;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -93,6 +94,28 @@ public class ClosableTabbedPanelTest {
         Rectangle last = inPanel(title(t2));
         drag(t3, new Point(last.x + last.width - 3, last.y + last.height / 2));
         assertEquals(Arrays.asList(c1, c2, c3), contents());
+    }
+
+    @Test
+    public void escapeCancelsTheDrag() {
+        Rectangle content = inPanel(groupOf(c1).cardPanel);
+        Point rightEdge = new Point(content.x + content.width - 10, content.y + content.height / 2);
+        Component title = title(t1);
+        pressAndDragTo(title, rightEdge);
+
+        // Esc goes to whatever has the focus: here, a content of another tab.
+        c2.dispatchEvent(new KeyEvent(c2, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ESCAPE, KeyEvent.CHAR_UNDEFINED));
+        BufferedImage img = paint();
+        int halfX = content.x + content.width - content.width / 2;
+        assertNotEquals("no shade after Esc", App.skin.getDefaultSelectionBackground().getRGB(), img.getRGB(halfX + 1, content.y + content.height / 2));
+
+        // The rest of the gesture does nothing.
+        dispatch(title, MouseEvent.MOUSE_DRAGGED, toLocal(title, rightEdge));
+        dispatch(title, MouseEvent.MOUSE_RELEASED, toLocal(title, rightEdge));
+        layout();
+        assertEquals(1, groups().size());
+        assertEquals(Arrays.asList(c1, c2, c3), contents());
+        assertSame("a cancelled drag is not a click either", c3, panel.getSelectedContent());
     }
 
     @Test
