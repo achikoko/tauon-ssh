@@ -132,6 +132,65 @@ public class TauonSSHClient {
         }
     }
     
+    /**
+     * A local port forward (-L) opened on demand, on a random free port of 127.0.0.1. Closing it stops listening at
+     * once; connections already forwarded end with their client.
+     */
+    public class LocalTunnel implements AutoCloseable {
+        private final String remoteHost;
+        private final int remotePort;
+        private final ServerSocket serverSocket;
+        private final Thread thread;
+
+        private LocalTunnel(SSHClient ssh, String remoteHost, int remotePort) throws IOException {
+            this.remoteHost = remoteHost;
+            this.remotePort = remotePort;
+            serverSocket = new ServerSocket();
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+            int localPort = serverSocket.getLocalPort();
+            thread = new Thread(() -> {
+                try {
+                    ssh.newLocalPortForwarder(new Parameters("127.0.0.1", localPort, remoteHost, remotePort), serverSocket)
+                            .listen();
+                } catch (IOException e) {
+                    if (!serverSocket.isClosed()) {
+                        LOG.warn("Tunnel 127.0.0.1:{} -> {}:{} failed", localPort, remoteHost, remotePort, e);
+                    }
+                } finally {
+                    closeQuietly();
+                }
+            }, "tunnel-" + localPort + "-" + remoteHost + ":" + remotePort);
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+        public int getLocalPort() {
+            return serverSocket.getLocalPort();
+        }
+
+        public boolean isOpen() {
+            return !serverSocket.isClosed();
+        }
+
+        @Override
+        public void close() {
+            closeQuietly();
+            thread.interrupt();
+        }
+
+        private void closeQuietly() {
+            synchronized (localTunnels) {
+                localTunnels.remove(this);
+            }
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                LOG.debug("Closing tunnel to {}:{}", remoteHost, remotePort, e);
+            }
+        }
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(TauonSSHClient.class);
     
     private final SiteInfo info;
@@ -149,6 +208,7 @@ public class TauonSSHClient {
     
     private final List<UserPassCache> cache = new ArrayList<>();
     private final List<PortForwardingState> portForwardingStates = new ArrayList<>();
+    private final List<LocalTunnel> localTunnels = new ArrayList<>();
     
     public TauonSSHClient(
             SiteInfo info, GuiHandle guiHandle, PasswordFinder passwordFinder, ExecutorService executor, boolean openPortForwarding, GraphicalHostKeyVerifier hostKeyVerifier
@@ -288,6 +348,29 @@ public class TauonSSHClient {
         }
     }
     
+    /**
+     * Opens a local port forward to {@code remoteHost:remotePort} (as seen from the SSH server) on a random free port of
+     * 127.0.0.1. It is closed by {@link LocalTunnel#close()} or when this client disconnects.
+     */
+    public synchronized LocalTunnel openLocalTunnel(String remoteHost, int remotePort) throws IOException, SessionClosedException {
+        if (closed.get() || !isConnected()) {
+            throw new SessionClosedException();
+        }
+        LocalTunnel tunnel = new LocalTunnel(sshConnectedHop.sshj, remoteHost, remotePort);
+        synchronized (localTunnels) {
+            localTunnels.add(tunnel);
+        }
+        return tunnel;
+    }
+
+    private void closeLocalTunnels() {
+        List<LocalTunnel> open;
+        synchronized (localTunnels) {
+            open = new ArrayList<>(localTunnels);
+        }
+        open.forEach(LocalTunnel::close);
+    }
+
     public synchronized boolean isConnected(){
         return sshConnectedHop != null && sshConnectedHop.sshj.isConnected();
     }
@@ -302,6 +385,7 @@ public class TauonSSHClient {
     
     private void disconnect() throws IOException, InterruptedException {
         
+        closeLocalTunnels();
         disconnectPortForwardingStates();
         if(sshConnectedHop != null) {
             sshConnectedHop.disconnect();

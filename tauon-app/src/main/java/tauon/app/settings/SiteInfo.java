@@ -25,6 +25,7 @@ public class SiteInfo extends HopEntry implements Serializable {
     private JumpType jumpType = JumpType.TcpForwarding;
     private List<HopEntry> jumpHosts = new ArrayList<>();
     private List<PortForwardingRule> portForwardingRules = new ArrayList<>();
+    private List<VncConnection> vncConnections = new ArrayList<>();
     
     public SiteInfo(String id, String host, int port, String user, String password, String keypath) {
         super(id, host, port, user, password, keypath);
@@ -102,6 +103,10 @@ public class SiteInfo extends HopEntry implements Serializable {
         getPortForwardingRules().stream()
                 .map(jh -> jh.copyTo(new PortForwardingRule()))
                 .forEach(info.getPortForwardingRules()::add);
+        
+        getVncConnections().stream()
+                .map(v -> v.copyTo(new VncConnection()))
+                .forEach(info.getVncConnections()::add);
         
         return info;
     }
@@ -220,6 +225,14 @@ public class SiteInfo extends HopEntry implements Serializable {
 
     public void setPortForwardingRules(List<PortForwardingRule> portForwardingRules) {
         this.portForwardingRules = portForwardingRules;
+    }
+
+    public List<VncConnection> getVncConnections() {
+        return vncConnections;
+    }
+
+    public void setVncConnections(List<VncConnection> vncConnections) {
+        this.vncConnections = vncConnections;
     }
     
     public boolean isXForwardingEnabled() {

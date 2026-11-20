@@ -3,6 +3,13 @@
  */
 package tauon.app.ssh;
 
+import tauon.app.settings.VncConnection;
+import tauon.app.vnc.TurboVncLocator;
+import tauon.app.vnc.VncSession;
+import tauon.app.services.SettingsConfigManager;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.sftp.SFTPClient;
@@ -58,6 +65,9 @@ public class SSHConnectionHandler {
     
     private final ExecutorService executorService;
     
+    /** One per VNC connection of the site; closed (viewers killed) when the session closes. */
+    private final List<VncSession> vncSessions = new ArrayList<>();
+    
     public SSHConnectionHandler(
             SiteInfo info,
             GuiHandle guiHandle,
@@ -89,6 +99,31 @@ public class SSHConnectionHandler {
         
         this.mainSsh = new TauonSSHClient(info, guiHandleDelegate, passwordFinder, executorService, true, hostKeyVerifier);
         
+        for (VncConnection vnc : info.getVncConnections()) {
+            vncSessions.add(new VncSession(
+                    vnc,
+                    (host, port) -> {
+                        TauonSSHClient.LocalTunnel t = openLocalTunnel(host, port);
+                        return new VncSession.Tunnel() {
+                            @Override
+                            public int getLocalPort() {
+                                return t.getLocalPort();
+                            }
+                            
+                            @Override
+                            public void close() {
+                                t.close();
+                            }
+                        };
+                    },
+                    () -> new TurboVncLocator(SettingsConfigManager.getSettings().getTurboVncViewerPath()).locate()
+            ));
+        }
+        
+    }
+    
+    public List<VncSession> getVncSessions() {
+        return Collections.unmodifiableList(vncSessions);
     }
     
     private TauonSSHClient ensureConnected() throws OperationCancelledException, SessionClosedException, InterruptedException {
@@ -132,6 +167,9 @@ public class SSHConnectionHandler {
         
         if(mainClosed.getAndSet(true))
             return;
+        
+        // Viewers first: their tunnels go through this connection
+        vncSessions.forEach(VncSession::close);
         
         for (SessionHandle session: openSessions){
             session.closeSessionSync();
@@ -332,6 +370,12 @@ public class SSHConnectionHandler {
             }
         }
         
+    }
+    
+    /** Opens a local port forward on a random free port, connecting first if needed. */
+    public TauonSSHClient.LocalTunnel openLocalTunnel(String remoteHost, int remotePort)
+            throws OperationCancelledException, SessionClosedException, InterruptedException, IOException {
+        return ensureConnected().openLocalTunnel(remoteHost, remotePort);
     }
     
     public List<TauonSSHClient.PortForwardingState> getPortsForwarding() {

@@ -49,6 +49,7 @@ public class SessionInfoPanel extends JPanel {
     private JCheckBox chkXForwarding;
     private JumpHostPanel panJumpHost;
     private PortForwardingPanel panPF;
+    private VncPanel panVnc;
     private TabbedPanel tabs;
     private SiteInfo info;
 
@@ -100,6 +101,7 @@ public class SessionInfoPanel extends JPanel {
 
         setJumpHostDetails(info.isUseJumpHosts(), info.getJumpType(), info.getJumpHosts());
         panPF.setInfo(info);
+        panVnc.setInfo(info);
     }
 
     private void setHost(String host) {
@@ -177,6 +179,7 @@ public class SessionInfoPanel extends JPanel {
         tabs.addTab(getBundle().getString("app.sites.label.proxy"), createProxyPanel());
         tabs.addTab(getBundle().getString("app.sites.label.jump_hosts"), createJumpPanel());
         tabs.addTab(getBundle().getString("app.sites.label.port_forwarding"), createPortForwardingPanel());
+        tabs.addTab(getBundle().getString("app.sites.label.vnc"), createVncPanel());
         this.add(tabs);
         tabs.setSelectedIndex(0);
     }
@@ -262,6 +265,22 @@ public class SessionInfoPanel extends JPanel {
         c.weighty = 1;
         c.fill = GridBagConstraints.BOTH;
         panel.add(panPF, c);
+
+        return panel;
+    }
+
+    private JPanel createVncPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panVnc = new VncPanel();
+
+        GridBagConstraints c = new GridBagConstraints();
+        c.anchor = GridBagConstraints.LINE_START;
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weightx = 1;
+        c.weighty = 1;
+        c.fill = GridBagConstraints.BOTH;
+        panel.add(panVnc, c);
 
         return panel;
     }

@@ -41,6 +41,10 @@ public class ConnectionStatusRenderer extends JLabel implements TableCellRendere
                 case STOPPED:
                     setText(getBundle().getString("value.connection_status.label.stopped"));
                     break;
+                case RUNNING:
+                    setText(getBundle().getString("value.connection_status.label.running"));
+                    setForeground(Color.GREEN);
+                    break;
                 case INITIATING:
                     setText(getBundle().getString("value.connection_status.label.initiating"));
                     setForeground(Color.BLUE);
