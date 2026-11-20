@@ -1,5 +1,5 @@
 name: tauon
-version: "4.0.0"
+version: "4.0.1"
 summary: Graphical SFTP client and terminal emulator with helpful utilities
 description: |
   Tauon is a graphical SSH client. It has a file browser,
@@ -7,7 +7,7 @@ description: |
   text editor, log viewer and lots of other helpful tools, 
   which makes it easy to work with remote servers.
 
-  More information is available on GitHub Repo: https://github.com/achiikun/muon-ssh
+  More information is available on GitHub Repo: https://github.com/achikoko/tauon-ssh
 grade: stable
 base: core18
 icon: snap/gui/tauonssh.png

@@ -41,7 +41,7 @@ This is done following good engineering practices:
 - Every change is reviewed by me before it is merged, just like code written by any other contributor.
 - Work is done in small, focused branches and commits, so each change can be reviewed and reverted on its own.
 - Changes are built and tested before they are committed, and decisions and trade-offs are documented
-  (see the [CHANGELOG](CHANGELOG.md) and [the JediTerm fork notes](https://github.com/achiikun/jediterm/blob/master/TAUON_FORK.md)).
+  (see the [CHANGELOG](CHANGELOG.md) and [the JediTerm fork notes](https://github.com/achikoko/jediterm/blob/master/TAUON_FORK.md)).
 - Commits made with AI assistance are marked with a `Co-Authored-By` trailer, so they are easy to identify.
 
 ## Building from source:
@@ -109,7 +109,7 @@ Versions are `PROJECT.MAJOR.MINOR`:
 
 Tauon respects the licence from its previous versions (Muon & Snowflake): [GPLv3](/LICENSE)
 
-Jediterm (from JetBrains) has double license: [LGPLv3](https://github.com/achiikun/jediterm/blob/master/LICENSE-LGPLv3.txt) and [Apache 2.0](https://github.com/achiikun/jediterm/blob/master/LICENSE-APACHE-2.0.txt).
+Jediterm (from JetBrains) has double license: [LGPLv3](https://github.com/achikoko/jediterm/blob/master/LICENSE-LGPLv3.txt) and [Apache 2.0](https://github.com/achikoko/jediterm/blob/master/LICENSE-APACHE-2.0.txt).
 For more information visit [https://github.com/JetBrains/jediterm](https://github.com/JetBrains/jediterm).
 
 ### Fonts

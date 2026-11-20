@@ -47,7 +47,7 @@ List of identified features and bugs to be solved:
 
 * [ ] Get rid of jsch
 * [ ] When hit a CTRL+C, flush console buffer to receive the prompt ASAP
-* [ ] Document the changes in https://github.com/achiikun/tauon-ssh/commit/d98d3945fb7bb0540c3ba11c550d7c3fbf11ec46
+* [ ] Document the changes in https://github.com/achikoko/tauon-ssh/commit/d98d3945fb7bb0540c3ba11c550d7c3fbf11ec46
 
 ## Bugs
 

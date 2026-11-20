@@ -6,6 +6,14 @@ changed or the bug that was fixed.
 
 ## [Unreleased]
 
+### Changed
+
+- GitHub links, update-check URL (`Constants.API_UPDATE_URL`) and the jediterm submodule now point to the renamed `achikoko/` repositories.
+
+### Fixed
+
+- Update checker compares versions number by number (`VersionEntry.compareTo`); `4.0.10` and `4.1.0` no longer collide and suffixed tags like `v3.3.0-r1` no longer break it.
+
 ## [4.0.0] - 2026-11-20
 
 ### Added
@@ -39,10 +47,10 @@ changed or the bug that was fixed.
 ### Added
 
 - Download files.
-- X11 support on Mac (from @devlinx9) ([020b542](https://github.com/achiikun/tauon-ssh/commit/020b542819f21ecd6a4d5ac95bb083200233457c)).
+- X11 support on Mac (from @devlinx9) ([020b542](https://github.com/achikoko/tauon-ssh/commit/020b542819f21ecd6a4d5ac95bb083200233457c)).
 - Local terminal (as in Muon, by @devlinx9).
 - Export and import everything from a zip ([devlinx9/muon-ssh 868f89f](https://github.com/devlinx9/muon-ssh/commit/868f89f2d2e194449fd06cb5eac7c9d9e53d2e32)).
-- Confirmation before deleting in the local file system ([e309404](https://github.com/achiikun/tauon-ssh/commit/e30940472cb0ab0901027281d5bfb9cd8c45a106)).
+- Confirmation before deleting in the local file system ([e309404](https://github.com/achikoko/tauon-ssh/commit/e30940472cb0ab0901027281d5bfb9cd8c45a106)).
 
 ### Changed
 
@@ -76,7 +84,7 @@ changed or the bug that was fixed.
 
 ### Added
 
-- Collapsed session panel ([PR #3](https://github.com/achiikun/tauon-ssh/pull/3)).
+- Collapsed session panel ([PR #3](https://github.com/achikoko/tauon-ssh/pull/3)).
 
 ### Changed
 
