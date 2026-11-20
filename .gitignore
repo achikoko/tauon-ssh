@@ -1,13 +1,12 @@
+# Maven build output (any module, also left over from before the Gradle migration)
+target/
 
-target/*
 .idea/*
 
 *.iml
 *.class
 *.jar
 !*/lib/*.jar
-
-/target/
 
 .classpath
 .project
@@ -18,14 +17,6 @@ flatpak/*
 !flatpak/org.tauon_ssh.App.png
 !flatpak/org.tauon_ssh.App.yml
 !flatpak/tauon
-
-muon-app/target/*
-muon-jediterm/target/*
-
-/muon-app/target/
-/muon-jediterm/target/
-
-muon-app/target/maven-archiver/pom.properties
 
 *.snap
 
