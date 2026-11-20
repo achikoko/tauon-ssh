@@ -522,7 +522,6 @@ public class ClosableTabbedPanel extends JPanel {
         if (!drag.dragging && drag.pressedAt.distance(p) > DRAG_SLOP) {
             drag.dragging = true;
             drag.tab.setDragged(true);
-            setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
             KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(escapeCancelsDrag);
         }
         if (drag.dragging) {
@@ -570,7 +569,6 @@ public class ClosableTabbedPanel extends JPanel {
     private void endDrag(Drag d) {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(escapeCancelsDrag);
         d.tab.setDragged(false);
-        setCursor(null);
         overlay.repaint();
     }
 
@@ -578,6 +576,19 @@ public class ClosableTabbedPanel extends JPanel {
     private final class DropOverlay extends JComponent {
         DropOverlay() {
             setOpaque(false);
+            setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+        }
+
+        /**
+         * AWT picks the cursor from the top-most component at a point, and this one covers the whole panel. Only while a
+         * tab is dragged is it "under the pointer", so the move cursor shows everywhere; otherwise it would hide every
+         * cursor below (the dividers' resize cursor, a terminal's text cursor). Mouse events are not affected either way:
+         * this has no mouse listeners, and during a drag they all go to the pressed tab.
+         */
+        @Override
+        public boolean contains(int x, int y) {
+            Drag d = drag;
+            return d != null && d.dragging;
         }
 
         @Override

@@ -282,12 +282,55 @@ public class ClosableTabbedPanelTest {
         assertEquals(Arrays.asList(c3, c1), Arrays.asList(panel.getSelectedContents()));
     }
 
+    @Test
+    public void dividersShowAResizeCursor() {
+        splitRight(t1);
+        Rectangle content = inPanel(groupOf(c3).cardPanel);
+        Rectangle right = inPanel(groupOf(c1).cardPanel);
+        Point onDivider = new Point((content.x + content.width + right.x) / 2, content.y + content.height / 2);
+        assertEquals(Cursor.E_RESIZE_CURSOR, cursorAt(onDivider));
+
+        Rectangle leftContent = inPanel(groupOf(c3).cardPanel);
+        drag(t3, new Point(leftContent.x + leftContent.width / 2, leftContent.y + leftContent.height - 5));
+        Rectangle top = inPanel(groupOf(c2).cardPanel);
+        Rectangle bottom = inPanel(groupOf(c3).strip);
+        Point onVerticalDivider = new Point(top.x + top.width / 2, (top.y + top.height + bottom.y) / 2);
+        assertEquals(Cursor.S_RESIZE_CURSOR, cursorAt(onVerticalDivider));
+    }
+
+    @Test
+    public void contentsKeepTheirOwnCursor() {
+        c3.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR)); // e.g. a terminal or a text field
+        Rectangle content = inPanel(groupOf(c3).cardPanel);
+        Point middle = new Point(content.x + content.width / 2, content.y + content.height / 2);
+        assertEquals(Cursor.TEXT_CURSOR, cursorAt(middle));
+
+        // While a tab is dragged: the move cursor everywhere, over contents with their own cursor too.
+        Component title = title(t1);
+        pressAndDragTo(title, middle);
+        assertEquals(Cursor.MOVE_CURSOR, cursorAt(middle));
+        dispatch(title, MouseEvent.MOUSE_RELEASED, toLocal(title, middle));
+        layout();
+        assertSame("dropped on its group's center: shown there", c1, panel.getSelectedContent());
+        assertEquals("back to the shown content's own cursor after the drop", Cursor.DEFAULT_CURSOR, cursorAt(middle));
+        t3.setTitle("three"); // c3 shown again: its text cursor again
+        click(t3);
+        assertEquals(Cursor.TEXT_CURSOR, cursorAt(middle));
+    }
+
     // ------------------------------------------------------------------------------------------------ helpers
 
     private void splitRight(TabHandle tab) {
         Rectangle content = inPanel(groupOf(c1).cardPanel);
         drag(tab, new Point(content.x + content.width - 10, content.y + content.height / 2));
         assertEquals(2, groups().size());
+    }
+
+    /** The cursor AWT shows at a point: the one of the top-most visible component there. */
+    private int cursorAt(Point p) {
+        Component c = panel.findComponentAt(p);
+        assertNotNull(c);
+        return c.getCursor().getType();
     }
 
     private static JPanel content(String name) {
