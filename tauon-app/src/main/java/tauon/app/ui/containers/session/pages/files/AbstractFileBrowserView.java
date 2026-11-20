@@ -36,7 +36,6 @@ public abstract class AbstractFileBrowserView extends JPanel implements FolderVi
     protected AddressBar addressBar;
     protected FolderView folderView;
     protected String path;
-    protected PanelOrientation orientation;
     
     private TabHandle tabHandle;
 
@@ -44,10 +43,9 @@ public abstract class AbstractFileBrowserView extends JPanel implements FolderVi
     
     private final UUID uuid = UUID.randomUUID();
     
-    public AbstractFileBrowserView(PanelOrientation orientation, FileBrowser fileBrowser) {
+    public AbstractFileBrowserView(FileBrowser fileBrowser) {
         super(new BorderLayout());
         this.fileBrowser = fileBrowser;
-        this.orientation = orientation;
 
         UIDefaults toolbarButtonSkin = App.skin.createToolbarSkin();
 
@@ -223,8 +221,8 @@ public abstract class AbstractFileBrowserView extends JPanel implements FolderVi
         this.render(this.path, false);
     }
 
-    public PanelOrientation getOrientation() {
-        return orientation;
+    public TabHandle getTabHandle() {
+        return tabHandle;
     }
 
     @Override
@@ -267,8 +265,5 @@ public abstract class AbstractFileBrowserView extends JPanel implements FolderVi
         return uuid;
     }
     
-    public enum PanelOrientation {
-        LEFT, RIGHT
-    }
 
 }

@@ -538,7 +538,7 @@ public class SshMenuHandler {
         if (files.length == 1) {
             FileInfo file = files[0];
             if (file.getType() == FileType.DIR || file.getType() == FileType.DIR_LINK) {
-                fileBrowser.openSshFileBrowserView(file.getPath(), this.fileBrowserView.getOrientation());
+                fileBrowser.openSshFileBrowserView(file.getPath(), fileBrowser.locationNextTo(this.fileBrowserView));
             } else {
 
             }
@@ -689,7 +689,7 @@ public class SshMenuHandler {
 
         mOpenInNewTab.addActionListener(e -> {
             String path = popupMenu.getName();
-            fileBrowser.openSshFileBrowserView(path, this.fileBrowserView.getOrientation());
+            fileBrowser.openSshFileBrowserView(path, fileBrowser.locationNextTo(this.fileBrowserView));
         });
 
         mOpenInTerminal.addActionListener(e -> {

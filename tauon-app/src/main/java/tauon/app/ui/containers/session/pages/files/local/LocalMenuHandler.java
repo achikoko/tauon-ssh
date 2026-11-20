@@ -207,7 +207,7 @@ public class LocalMenuHandler {
         if (files.length == 1) {
             FileInfo file = files[0];
             if (file.getType() == FileType.DIR || file.getType() == FileType.DIR_LINK) {
-                fileBrowser.openLocalFileBrowserView(file.getPath(), this.fileBrowserView.getOrientation());
+                fileBrowser.openLocalFileBrowserView(file.getPath(), fileBrowser.locationNextTo(this.fileBrowserView));
             }
         }
     }

@@ -13,6 +13,8 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -21,6 +23,8 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+
+import tauon.app.ui.components.closabletabs.Location.Side;
 
 /**
  * Tabs with a close button, which can be reordered and split by dragging them with the mouse (IntelliJ's split editors).
@@ -135,6 +139,15 @@ public class ClosableTabbedPanel extends JPanel {
         if (location != null && location.group.owner() == this && location.group.isAlive()) {
             group = location.group;
             index = location.index;
+            if (location.side != null) {
+                TabGroup newGroup = new TabGroup();
+                split(group, location.side, newGroup);
+                updateButtonsBoxGroup();
+                treeHolder.revalidate();
+                treeHolder.repaint();
+                group = newGroup;
+                index = Location.END;
+            }
         }
 
         TabTitleComponent title = new TabTitleComponent(body);
@@ -166,6 +179,24 @@ public class ClosableTabbedPanel extends JPanel {
         }
     }
 
+    /**
+     * @return the end of the group {@code tab} is in (e.g. to open a tab next to it), or {@code null} if it is not in
+     * this panel any more
+     */
+    public Location locationOf(TabHandle tab) {
+        TabGroup group = ((TabTitleComponent) tab).group;
+        return group != null && group.owner() == this ? new Location(group, Location.END, null) : null;
+    }
+
+    /**
+     * @return a new group split off at {@code side} of the group {@code tab} is in, or {@code null} if it is not in this
+     * panel any more
+     */
+    public Location beside(TabHandle tab, Side side) {
+        TabGroup group = ((TabTitleComponent) tab).group;
+        return group != null && group.owner() == this ? new Location(group, Location.END, side) : null;
+    }
+
     /** @return the content of the active group's selected tab, or {@code null} if it has none */
     public Component getSelectedContent() {
         TabTitleComponent selected = activeGroup.selected();
@@ -177,6 +208,18 @@ public class ClosableTabbedPanel extends JPanel {
      */
     public JPanel getButtonsBox() {
         return buttonsBox;
+    }
+
+    /** @return each group's selected tab content (what is on screen), left to right and top to bottom */
+    public Component[] getSelectedContents() {
+        List<Component> contents = new ArrayList<>();
+        for (TabGroup g : groups()) {
+            TabTitleComponent selected = g.selected();
+            if (selected != null) {
+                contents.add(selected.component);
+            }
+        }
+        return contents.toArray(new Component[0]);
     }
 
     /** @return every tab's content, group by group, left to right and top to bottom */
@@ -230,8 +273,8 @@ public class ClosableTabbedPanel extends JPanel {
     }
 
     /** Splits {@code target} at {@code edge}, giving {@code newGroup} that half. */
-    private void split(TabGroup target, Edge edge, TabGroup newGroup) {
-        boolean horizontal = edge == Edge.LEFT || edge == Edge.RIGHT;
+    private void split(TabGroup target, Side edge, TabGroup newGroup) {
+        boolean horizontal = edge == Side.LEFT || edge == Side.RIGHT;
         int extent = horizontal ? target.getWidth() : target.getHeight();
 
         JSplitPane split = new SkinnedSplitPane(horizontal ? JSplitPane.HORIZONTAL_SPLIT : JSplitPane.VERTICAL_SPLIT);
@@ -241,10 +284,24 @@ public class ClosableTabbedPanel extends JPanel {
         split.setBorder(null);
 
         replace(target, split);
-        boolean newFirst = edge == Edge.LEFT || edge == Edge.TOP;
+        boolean newFirst = edge == Side.LEFT || edge == Side.TOP;
         split.setLeftComponent(newFirst ? newGroup : target);
         split.setRightComponent(newFirst ? target : newGroup);
-        split.setDividerLocation(Math.max(0, (extent - DIVIDER_SIZE) / 2));
+        if (extent > 0) {
+            split.setDividerLocation((extent - DIVIDER_SIZE) / 2);
+        } else {
+            // Not laid out yet (e.g. split while opening): put the divider in the middle once it has a size.
+            split.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    int size = horizontal ? split.getWidth() : split.getHeight();
+                    if (size > 0) {
+                        split.removeComponentListener(this);
+                        split.setDividerLocation((size - DIVIDER_SIZE) / 2);
+                    }
+                }
+            });
+        }
     }
 
     /** Removes an empty group, collapsing its split into the other side. The last group always stays. */
@@ -299,19 +356,17 @@ public class ClosableTabbedPanel extends JPanel {
 
     // ------------------------------------------------------------------------------------------------ dragging
 
-    private enum Edge {LEFT, RIGHT, TOP, BOTTOM}
-
     /** Where a dragged tab lands: into a group at an index (among its other tabs), or splitting a group at an edge. */
     private static final class Drop {
         final TabGroup group;
         final int index;
-        final Edge edge;
+        final Side edge;
         /** Over a strip: where the line is drawn (x in the panel). */
         final Integer lineX;
         /** Over a content: what is shaded (in the panel). */
         final Rectangle shaded;
 
-        Drop(TabGroup group, int index, Edge edge, Integer lineX, Rectangle shaded) {
+        Drop(TabGroup group, int index, Side edge, Integer lineX, Rectangle shaded) {
             this.group = group;
             this.index = index;
             this.edge = edge;
@@ -376,10 +431,10 @@ public class ClosableTabbedPanel extends JPanel {
             int stripHeight = g.strip.getHeight();
             boolean alone = dragged.group == g && g.tabs().size() == 1;
 
-            Edge edge = null;
+            Side edge = null;
             double best = EDGE_ZONE;
-            for (Edge e : Edge.values()) {
-                boolean horizontal = e == Edge.LEFT || e == Edge.RIGHT;
+            for (Side e : Side.values()) {
+                boolean horizontal = e == Side.LEFT || e == Side.RIGHT;
                 boolean fits = horizontal
                         ? (content.width - DIVIDER_SIZE) / 2 >= MIN_GROUP
                         : (stripHeight + content.height - DIVIDER_SIZE) / 2 >= stripHeight + MIN_GROUP;
@@ -419,7 +474,7 @@ public class ClosableTabbedPanel extends JPanel {
         return null;
     }
 
-    private static Rectangle half(Rectangle r, Edge edge) {
+    private static Rectangle half(Rectangle r, Side edge) {
         switch (edge) {
             case LEFT:
                 return new Rectangle(r.x, r.y, r.width / 2, r.height);
@@ -643,7 +698,7 @@ public class ClosableTabbedPanel extends JPanel {
             newTabButton.setForeground(App.skin.getInfoTextForeground());
             newTabButton.addActionListener(e -> {
                 activeGroup = this;
-                newTabCallback.onNewTab(newTabButton, new Location(this, Location.END));
+                newTabCallback.onNewTab(newTabButton, new Location(this, Location.END, null));
             });
 
             ownButtons.setOpaque(true);

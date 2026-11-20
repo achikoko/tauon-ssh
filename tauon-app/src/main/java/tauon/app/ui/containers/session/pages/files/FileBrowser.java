@@ -17,8 +17,8 @@ import tauon.app.ssh.filesystem.transfer.FileTransferLocalToRemote;
 import tauon.app.ssh.filesystem.transfer.FileTransferRemoteToLocal;
 import tauon.app.ui.components.closabletabs.ClosableTabbedPanel;
 import tauon.app.ui.components.closabletabs.Location;
+import tauon.app.ui.components.closabletabs.TabHandle;
 import tauon.app.ui.components.misc.FontAwesomeContants;
-import tauon.app.ui.components.misc.SkinnedSplitPane;
 import tauon.app.ui.components.page.Page;
 import tauon.app.ui.containers.session.SessionContentPanel;
 import tauon.app.ui.containers.session.pages.files.local.LocalFileBrowserView;
@@ -39,9 +39,7 @@ import static tauon.app.services.LanguageService.getBundle;
 public class FileBrowser extends Page {
     private static final Logger LOG = LoggerFactory.getLogger(FileBrowser.class);
     
-    private final JSplitPane horizontalSplitter;
-    private final ClosableTabbedPanel leftTabs;
-    private final ClosableTabbedPanel rightTabs;
+    private final ClosableTabbedPanel tabs;
     private final SessionContentPanel holder;
     private final SiteInfo info;
     private final Map<String, List<FileInfo>> sshDirCache = new HashMap<>();
@@ -49,7 +47,6 @@ public class FileBrowser extends Page {
     private final JPopupMenu popup;
     private final Map<UUID, AbstractFileBrowserView> viewList = new HashMap<>();
     private FileTransfer ongoingFileTransfer;
-    private boolean leftPopup = false;
     /** Where the tab chosen in the new-tab popup goes: the group whose "+" opened it. */
     private Location popupLocation;
     private JLabel lblStat1;
@@ -73,90 +70,46 @@ public class FileBrowser extends Page {
         popup.add(localMenuItem);
         popup.pack();
 
-        localMenuItem.addActionListener(e -> {
-            if (leftPopup) {
-                openLocalFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.LEFT, popupLocation);
-            } else {
-                openLocalFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.RIGHT, popupLocation);
-            }
-        });
+        localMenuItem.addActionListener(e -> openLocalFileBrowserView(null, popupLocation));
+        remoteMenuItem.addActionListener(e -> openSshFileBrowserView(null, popupLocation));
 
-        remoteMenuItem.addActionListener(e -> {
-            if (leftPopup) {
-                openSshFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.LEFT, popupLocation);
-            } else {
-                openSshFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.RIGHT, popupLocation);
-            }
-        });
-
-        this.leftTabs = new ClosableTabbedPanel((c, location) -> {
+        // One tab panel: the remote and local browsers open side by side (onLoad), and any tab can be dragged to
+        // another group or split off.
+        this.tabs = new ClosableTabbedPanel((c, location) -> {
             popup.setInvoker(c);
-            leftPopup = true;
             popupLocation = location;
             popup.show(c, 0, c.getHeight());
         });
-
-        this.rightTabs = new ClosableTabbedPanel((c, location) -> {
-            popup.setInvoker(c);
-            leftPopup = false;
-            popupLocation = location;
-            popup.show(c, 0, c.getHeight());
-        });
-
-        horizontalSplitter = new SkinnedSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        horizontalSplitter.setResizeWeight(0.5);
-        horizontalSplitter.setLeftComponent(this.leftTabs);
-        horizontalSplitter.setRightComponent(this.rightTabs);
-        horizontalSplitter.setDividerSize(5);
-
-        if (SettingsConfigManager.getSettings().isDualPaneMode()) {
-            switchToDualPaneMode();
-        } else {
-            switchToSinglePanelMode();
-        }
-
+        this.add(this.tabs);
     }
 
-
-    private void switchToDualPaneMode() {
-        horizontalSplitter.setRightComponent(this.rightTabs);
-        horizontalSplitter.setLeftComponent(this.leftTabs);
-        this.add(horizontalSplitter);
-        this.revalidate();
-        this.repaint();
+    /**
+     * Opens a remote browser.
+     *
+     * @param location where its tab goes; {@code null} for the active group
+     */
+    public TabHandle openSshFileBrowserView(String path, Location location) {
+        SshFileBrowserView tab = new SshFileBrowserView(this, path);
+        TabHandle handle = this.tabs.addTab(tab, location);
+        tab.setTabHandle(handle);
+        return handle;
     }
 
-    private void switchToSinglePanelMode() {
-        this.remove(horizontalSplitter);
-        this.add(this.leftTabs);
-        this.revalidate();
-        this.repaint();
+    /**
+     * Opens a local browser.
+     *
+     * @param location where its tab goes; {@code null} for the active group
+     */
+    public TabHandle openLocalFileBrowserView(String path, Location location) {
+        LocalFileBrowserView tab = new LocalFileBrowserView(this, path);
+        TabHandle handle = this.tabs.addTab(tab, location);
+        tab.setTabHandle(handle);
+        return handle;
     }
 
-    public void openSshFileBrowserView(String path, AbstractFileBrowserView.PanelOrientation orientation) {
-        openSshFileBrowserView(path, orientation, null);
-    }
-
-    public void openSshFileBrowserView(String path, AbstractFileBrowserView.PanelOrientation orientation, Location location) {
-        SshFileBrowserView tab = new SshFileBrowserView(this, path, orientation);
-        if (orientation == AbstractFileBrowserView.PanelOrientation.LEFT) {
-            tab.setTabHandle(this.leftTabs.addTab(tab, location));
-        } else {
-            tab.setTabHandle(this.rightTabs.addTab(tab, location));
-        }
-    }
-
-    public void openLocalFileBrowserView(String path, AbstractFileBrowserView.PanelOrientation orientation) {
-        openLocalFileBrowserView(path, orientation, null);
-    }
-
-    public void openLocalFileBrowserView(String path, AbstractFileBrowserView.PanelOrientation orientation, Location location) {
-        LocalFileBrowserView tab = new LocalFileBrowserView(this, path, orientation);
-        if (orientation == AbstractFileBrowserView.PanelOrientation.LEFT) {
-            tab.setTabHandle(this.leftTabs.addTab(tab, location));
-        } else {
-            tab.setTabHandle(this.rightTabs.addTab(tab, location));
-        }
+    /** @return where a tab opened from {@code view} goes: next to it, in its group */
+    public Location locationNextTo(AbstractFileBrowserView view) {
+        return view.getTabHandle() == null ? null : tabs.locationOf(view.getTabHandle());
     }
 
     public SshFileSystem getSshFileSystem() {
@@ -196,16 +149,12 @@ public class FileBrowser extends Page {
 //
 //    }
 
+    /** Reloads the browsers on screen: each group's selected one. */
     private void reloadView() {
-        Component c = leftTabs.getSelectedContent();
-        System.out.println("c1 " + c);
-        if (c instanceof AbstractFileBrowserView) {
-            ((AbstractFileBrowserView) c).reload();
-        }
-        c = rightTabs.getSelectedContent();
-        System.out.println("c2 " + c);
-        if (c instanceof AbstractFileBrowserView) {
-            ((AbstractFileBrowserView) c).reload();
+        for (Component c : tabs.getSelectedContents()) {
+            if (c instanceof AbstractFileBrowserView) {
+                ((AbstractFileBrowserView) c).reload();
+            }
         }
     }
     
@@ -215,12 +164,9 @@ public class FileBrowser extends Page {
             return;
         }
         init.set(true);
-        SshFileBrowserView left = new SshFileBrowserView(this, null, AbstractFileBrowserView.PanelOrientation.LEFT);
-        left.setTabHandle(this.leftTabs.addTab(left, null));
-
-        LocalFileBrowserView right = new LocalFileBrowserView(this, System.getProperty("user.home"),
-                AbstractFileBrowserView.PanelOrientation.RIGHT);
-        right.setTabHandle(this.rightTabs.addTab(right, null));
+        // Remote on the left, local on the right, side by side
+        TabHandle remote = openSshFileBrowserView(null, null);
+        openLocalFileBrowserView(System.getProperty("user.home"), tabs.beside(remote, Location.Side.RIGHT));
     }
 
     @Override
@@ -241,7 +187,7 @@ public class FileBrowser extends Page {
     }
 
     public void openPath(String path) {
-        openSshFileBrowserView(path, AbstractFileBrowserView.PanelOrientation.LEFT);
+        openSshFileBrowserView(path, null);
     }
 
     public boolean isSessionClosed() {

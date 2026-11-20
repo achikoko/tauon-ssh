@@ -239,6 +239,49 @@ public class ClosableTabbedPanelTest {
         assertEquals(Arrays.asList(c2, c3, c1), contents());
     }
 
+    @Test
+    public void besideSplitsEvenBeforeTheFirstLayout() throws Exception {
+        // As the file browser opens: remote, then local beside it, before the panel has a size.
+        ClosableTabbedPanel fresh = new ClosableTabbedPanel((b, l) -> {});
+        JPanel remote = content("remote");
+        JPanel local = content("local");
+        TabHandle remoteTab = fresh.addTab(remote, null);
+        fresh.addTab(local, fresh.beside(remoteTab, Location.Side.RIGHT));
+
+        List<JSplitPane> s = new ArrayList<>();
+        collect(fresh, JSplitPane.class, s);
+        assertEquals(1, s.size());
+        assertSame(groupOf(remote), s.get(0).getLeftComponent());
+        assertSame(groupOf(local), s.get(0).getRightComponent());
+        assertSame(local, fresh.getSelectedContent());
+
+        fresh.setSize(W, H);
+        layout(fresh);
+        SwingUtilities.invokeAndWait(() -> { }); // deliver the resize events
+        layout(fresh);
+        assertTrue("divider in the middle once sized: " + s.get(0).getDividerLocation(),
+                Math.abs(s.get(0).getDividerLocation() - (W - 5) / 2) <= 1);
+    }
+
+    @Test
+    public void locationOfOpensNextToATab() {
+        splitRight(t1);
+        JPanel c4 = content("c4");
+        panel.addTab(c4, panel.locationOf(t2));
+        assertSame(groupOf(c2), groupOf(c4));
+
+        panel.close(t1);
+        layout();
+        assertNull("a closed tab has no location", panel.locationOf(t1));
+        assertNull(panel.beside(t1, Location.Side.LEFT));
+    }
+
+    @Test
+    public void selectedContentsAreEachGroupsShownTab() {
+        splitRight(t1);
+        assertEquals(Arrays.asList(c3, c1), Arrays.asList(panel.getSelectedContents()));
+    }
+
     // ------------------------------------------------------------------------------------------------ helpers
 
     private void splitRight(TabHandle tab) {

@@ -40,8 +40,8 @@ public class SshFileBrowserView extends AbstractFileBrowserView {
     private final JPopupMenu addressPopup;
     private final DndTransferHandler transferHandler;
 
-    public SshFileBrowserView(FileBrowser fileBrowser, String initialPath, PanelOrientation orientation) {
-        super(orientation, fileBrowser);
+    public SshFileBrowserView(FileBrowser fileBrowser, String initialPath) {
+        super(fileBrowser);
         this.menuHandler = new SshMenuHandler(fileBrowser, this);
         this.menuHandler.initMenuHandler(this.folderView);
         this.transferHandler = new DndTransferHandler(this);

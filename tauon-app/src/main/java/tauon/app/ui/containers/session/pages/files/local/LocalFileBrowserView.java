@@ -31,8 +31,8 @@ public class LocalFileBrowserView extends AbstractFileBrowserView {
     private final JPopupMenu addressPopup;
     private LocalFileSystem fs;
 
-    public LocalFileBrowserView(FileBrowser fileBrowser, String initialPath, PanelOrientation orientation) {
-        super(orientation, fileBrowser);
+    public LocalFileBrowserView(FileBrowser fileBrowser, String initialPath) {
+        super(fileBrowser);
         this.menuHandler = new LocalMenuHandler(fileBrowser, this);
         this.menuHandler.initMenuHandler(this.folderView);
         this.transferHandler = new DndTransferHandler(this);
