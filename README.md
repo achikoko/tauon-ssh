@@ -35,21 +35,28 @@ because I knew from the beginning I'd refactor it heavily.
 
 ## Building from source:
 
-> This is a standard maven project. If you have configured Java and Maven use: 
-> <b>mvn clean install</b> to build the project.
-> The jar will be created in target directory
+> This is a Gradle project. Building requires **JDK 17+** (Gradle 9 needs it); the resulting jar still runs on Java 11.
+> The JediTerm fork lives in the `tauon-jediterm` git submodule, so clone with `--recurse-submodules`
+> (or run `git submodule update --init` afterwards).
+>
+> Use <b>./gradlew build</b> to build the project.
+> The runnable jar will be created at `tauon-app/build/libs/tauonssh.jar`.
+> Run it directly from sources with `./gradlew :tauon-app:jar && java -jar tauon-app/build/libs/tauonssh.jar`.
 
 ### Install as deb (Debian)
 
-1. Execute `mvn clean install` to create the `.deb` file.
+1. Execute `./gradlew build` (or just `./gradlew :tauon-app:deb`) to create the `.deb` file.
 2. Install the deb file:
 ```shell
-sudo dpkg -i target/tauonssh_*.deb
+sudo dpkg -i tauon-app/build/distributions/tauonssh_*.deb
 ```
 
 ### Install as flatpak (Experimental)
 
-1. Execute `mvn clean install` to create the jar. (It will be copied automatically into flatpak's folder)
+1. Execute `./gradlew :tauon-app:jar` to create the jar and copy it into flatpak's folder:
+```shell
+cp tauon-app/build/libs/tauonssh.jar flatpak/
+```
 2. Build the app using flatpak:
 ```shell
 cd flatpak

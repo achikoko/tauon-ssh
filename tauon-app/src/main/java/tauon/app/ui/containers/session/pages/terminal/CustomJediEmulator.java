@@ -701,14 +701,14 @@ public class CustomJediEmulator extends JediEmulator {
                     return true;
                 case 9:
                     if (enabled) {
-                        setMouseMode(MouseMode.MOUSE_REPORTING_NORMAL_ONLY_PRESS);
+                        setMouseMode(MouseMode.MOUSE_REPORTING_X10);
                     } else {
                         setMouseMode(MouseMode.MOUSE_REPORTING_NONE);
                     }
                     return true;
                 case 1000:
                     if (enabled) {
-                        setMouseMode(MouseMode.MOUSE_REPORTING_NORMAL_PRESS_RELEASE);
+                        setMouseMode(MouseMode.MOUSE_REPORTING_NORMAL);
                     } else {
                         setMouseMode(MouseMode.MOUSE_REPORTING_NONE);
                     }

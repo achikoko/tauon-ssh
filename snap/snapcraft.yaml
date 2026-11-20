@@ -15,7 +15,7 @@ confinement: strict
 
 apps:
   tauon:
-    command: java -jar $SNAP/jar/tauonssh_3.3.0.jar
+    command: java -jar $SNAP/jar/tauonssh.jar
     common-id: tauonssh.desktop
     environment:
       # Needed for fontconfig
@@ -26,18 +26,14 @@ apps:
 
 parts:
   tauon:
-    plugin: maven
+    plugin: nil
     source: .
     override-build: |
       mkdir -p $SNAPCRAFT_PART_INSTALL/jar/
-      snapcraftctl build
-      cp ./tauon-app/target/*.jar $SNAPCRAFT_PART_INSTALL/jar/
-      cp ./tauon-jediterm/target/*.jar $SNAPCRAFT_PART_INSTALL/jar/
-    maven-targets:
-      - /root/parts/tauon/build/tauon-app
-      - /root/parts/tauon/build/tauon-jediterm
+      ./gradlew --no-daemon :tauon-app:jar
+      cp ./tauon-app/build/libs/tauonssh.jar $SNAPCRAFT_PART_INSTALL/jar/
     build-packages:
-      - openjdk-11-jdk
+      - openjdk-17-jdk-headless
     stage-packages:
       - openjdk-11-jre
       - x11-utils

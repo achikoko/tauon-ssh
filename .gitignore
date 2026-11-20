@@ -28,3 +28,9 @@ muon-jediterm/target/*
 muon-app/target/maven-archiver/pom.properties
 
 *.snap
+
+# Gradle
+.gradle/
+build/
+.kotlin/
+!gradle/wrapper/gradle-wrapper.jar

@@ -1,0 +1,34 @@
+# Builds Tauon (and the tauon-jediterm submodule) with Gradle.
+# Gradle 9 needs JDK 17+ to run; the produced bytecode still targets Java 11.
+
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [ 17, 21 ]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: "Set up JDK ${{ matrix.java-version }}"
+        uses: actions/setup-java@v4
+        with:
+          java-version: "${{ matrix.java-version }}"
+          distribution: 'temurin'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build with Gradle
+        run: ./gradlew build
