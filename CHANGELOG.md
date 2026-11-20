@@ -6,6 +6,11 @@ changed or the bug that was fixed.
 
 ## [Unreleased]
 
+### Added
+
+- Tabs (terminals, file browsers, logs) can be reordered by dragging, and split side by side or one above the other by dropping them near a content's edge (`ClosableTabbedPanel`).
+- Each split group has its own "+" button; new tabs open in that group (`ClosableTabbedPanel.addTab(Component, Location)`).
+
 ### Changed
 
 - GitHub links, update-check URL (`Constants.API_UPDATE_URL`) and the jediterm submodule now point to the renamed `achikoko/` repositories.

@@ -16,6 +16,7 @@ import tauon.app.ssh.filesystem.transfer.FileTransfer;
 import tauon.app.ssh.filesystem.transfer.FileTransferLocalToRemote;
 import tauon.app.ssh.filesystem.transfer.FileTransferRemoteToLocal;
 import tauon.app.ui.components.closabletabs.ClosableTabbedPanel;
+import tauon.app.ui.components.closabletabs.Location;
 import tauon.app.ui.components.misc.FontAwesomeContants;
 import tauon.app.ui.components.misc.SkinnedSplitPane;
 import tauon.app.ui.components.page.Page;
@@ -49,6 +50,8 @@ public class FileBrowser extends Page {
     private final Map<UUID, AbstractFileBrowserView> viewList = new HashMap<>();
     private FileTransfer ongoingFileTransfer;
     private boolean leftPopup = false;
+    /** Where the tab chosen in the new-tab popup goes: the group whose "+" opened it. */
+    private Location popupLocation;
     private JLabel lblStat1;
     private Box statusBox;
     
@@ -72,29 +75,31 @@ public class FileBrowser extends Page {
 
         localMenuItem.addActionListener(e -> {
             if (leftPopup) {
-                openLocalFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.LEFT);
+                openLocalFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.LEFT, popupLocation);
             } else {
-                openLocalFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.RIGHT);
+                openLocalFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.RIGHT, popupLocation);
             }
         });
 
         remoteMenuItem.addActionListener(e -> {
             if (leftPopup) {
-                openSshFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.LEFT);
+                openSshFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.LEFT, popupLocation);
             } else {
-                openSshFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.RIGHT);
+                openSshFileBrowserView(null, AbstractFileBrowserView.PanelOrientation.RIGHT, popupLocation);
             }
         });
 
-        this.leftTabs = new ClosableTabbedPanel(c -> {
+        this.leftTabs = new ClosableTabbedPanel((c, location) -> {
             popup.setInvoker(c);
             leftPopup = true;
+            popupLocation = location;
             popup.show(c, 0, c.getHeight());
         });
 
-        this.rightTabs = new ClosableTabbedPanel(c -> {
+        this.rightTabs = new ClosableTabbedPanel((c, location) -> {
             popup.setInvoker(c);
             leftPopup = false;
+            popupLocation = location;
             popup.show(c, 0, c.getHeight());
         });
 
@@ -129,21 +134,28 @@ public class FileBrowser extends Page {
     }
 
     public void openSshFileBrowserView(String path, AbstractFileBrowserView.PanelOrientation orientation) {
+        openSshFileBrowserView(path, orientation, null);
+    }
+
+    public void openSshFileBrowserView(String path, AbstractFileBrowserView.PanelOrientation orientation, Location location) {
         SshFileBrowserView tab = new SshFileBrowserView(this, path, orientation);
         if (orientation == AbstractFileBrowserView.PanelOrientation.LEFT) {
-            tab.setTabHandle(this.leftTabs.addTab(tab));
+            tab.setTabHandle(this.leftTabs.addTab(tab, location));
         } else {
-            tab.setTabHandle(this.rightTabs.addTab(tab));
+            tab.setTabHandle(this.rightTabs.addTab(tab, location));
         }
     }
 
     public void openLocalFileBrowserView(String path, AbstractFileBrowserView.PanelOrientation orientation) {
+        openLocalFileBrowserView(path, orientation, null);
+    }
 
+    public void openLocalFileBrowserView(String path, AbstractFileBrowserView.PanelOrientation orientation, Location location) {
         LocalFileBrowserView tab = new LocalFileBrowserView(this, path, orientation);
         if (orientation == AbstractFileBrowserView.PanelOrientation.LEFT) {
-            tab.setTabHandle(this.leftTabs.addTab(tab));
+            tab.setTabHandle(this.leftTabs.addTab(tab, location));
         } else {
-            tab.setTabHandle(this.rightTabs.addTab(tab));
+            tab.setTabHandle(this.rightTabs.addTab(tab, location));
         }
     }
 
@@ -204,11 +216,11 @@ public class FileBrowser extends Page {
         }
         init.set(true);
         SshFileBrowserView left = new SshFileBrowserView(this, null, AbstractFileBrowserView.PanelOrientation.LEFT);
-        left.setTabHandle(this.leftTabs.addTab(left));
+        left.setTabHandle(this.leftTabs.addTab(left, null));
 
         LocalFileBrowserView right = new LocalFileBrowserView(this, System.getProperty("user.home"),
                 AbstractFileBrowserView.PanelOrientation.RIGHT);
-        right.setTabHandle(this.rightTabs.addTab(right));
+        right.setTabHandle(this.rightTabs.addTab(right, null));
     }
 
     @Override

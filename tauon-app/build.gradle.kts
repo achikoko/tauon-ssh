@@ -62,6 +62,7 @@ sourceSets.main {
 
 tasks.test {
     useJUnit()
+    systemProperty("java.awt.headless", "true") // Swing components are tested without a display
 }
 
 // Runs the app from the compiled classes: ./gradlew run

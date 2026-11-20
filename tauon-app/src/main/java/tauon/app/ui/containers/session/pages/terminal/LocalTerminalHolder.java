@@ -1,5 +1,6 @@
 package tauon.app.ui.containers.session.pages.terminal;
 
+import tauon.app.ui.components.closabletabs.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tauon.app.exceptions.SessionClosedException;
@@ -48,18 +49,22 @@ public class LocalTerminalHolder extends AbstractTerminalHolder implements AutoC
     }
     
     @Override
-    public void onNewTabClicked() throws SessionClosedException {
-        openNewTerminal(null, true);
+    public void onNewTabClicked(Location location) throws SessionClosedException {
+        openNewTerminal(null, true, location);
     }
     
     public void openNewTerminal(String command, boolean start) throws SessionClosedException {
+        openNewTerminal(command, start, null);
+    }
+
+    public void openNewTerminal(String command, boolean start, Location location) throws SessionClosedException {
         c++;
         LocalTerminalComponent tc = new LocalTerminalComponent(
                 String.valueOf(c),
                 command,
                 guiHandle
         );
-        tc.setTabHandle(this.tabs.addTab(tc));
+        tc.setTabHandle(this.tabs.addTab(tc, location));
         if(start)
             tc.start();
     }

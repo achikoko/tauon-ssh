@@ -6,6 +6,7 @@ import tauon.app.App;
 import tauon.app.exceptions.SessionClosedException;
 import tauon.app.ssh.GuiHandle;
 import tauon.app.ui.components.closabletabs.ClosableTabbedPanel;
+import tauon.app.ui.components.closabletabs.Location;
 import tauon.app.ui.components.misc.FontAwesomeContants;
 import tauon.app.ui.components.page.Page;
 import tauon.app.ui.containers.session.pages.terminal.snippets.SnippetPanel;
@@ -31,9 +32,9 @@ public abstract class AbstractTerminalHolder extends Page implements AutoCloseab
     
     public AbstractTerminalHolder(GuiHandle guiHandle) {
         this.guiHandle = guiHandle;
-        this.tabs = new ClosableTabbedPanel(e -> {
+        this.tabs = new ClosableTabbedPanel((button, location) -> {
             try {
-                onNewTabClicked();
+                onNewTabClicked(location);
             } catch (SessionClosedException ex) {
                 guiHandle.reportException(ex);
             }
@@ -87,7 +88,7 @@ public abstract class AbstractTerminalHolder extends Page implements AutoCloseab
         });
     }
     
-    public abstract void onNewTabClicked() throws SessionClosedException;
+    public abstract void onNewTabClicked(Location location) throws SessionClosedException;
 
     private void focusTerminal() {
         tabs.requestFocusInWindow();
