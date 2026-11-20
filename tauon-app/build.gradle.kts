@@ -64,6 +64,15 @@ tasks.test {
     useJUnit()
 }
 
+// Runs the app from the compiled classes: ./gradlew run
+// (A plain JavaExec instead of the `application` plugin, which would also add distZip/distTar to every build.)
+tasks.register<JavaExec>("run") {
+    group = "application"
+    description = "Runs Tauon from the compiled classes"
+    mainClass = mainClassName
+    classpath = sourceSets.main.get().runtimeClasspath
+}
+
 // Replaces maven-assembly-plugin (jar-with-dependencies): build/libs/tauonssh.jar, uncompressed.
 tasks.jar {
     archiveFileName = "tauonssh.jar"

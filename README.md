@@ -52,7 +52,7 @@ This is done following good engineering practices:
 >
 > Use <b>./gradlew build</b> to build the project.
 > The runnable jar will be created at `tauon-app/build/libs/tauonssh.jar`.
-> Run it directly from sources with `./gradlew :tauon-app:jar && java -jar tauon-app/build/libs/tauonssh.jar`.
+> Run it directly from sources with `./gradlew run`.
 
 ### Install as deb (Debian)
 
