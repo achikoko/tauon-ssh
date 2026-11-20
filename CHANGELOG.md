@@ -11,6 +11,7 @@ changed or the bug that was fixed.
 - Tabs (terminals, file browsers, logs) can be reordered by dragging, and split side by side or one above the other by dropping them near a content's edge (`ClosableTabbedPanel`).
 - Each split group has its own "+" button; new tabs open in that group (`ClosableTabbedPanel.addTab(Component, Location)`).
 - Esc cancels a tab drag.
+- Cursor feedback: resize cursor on the split dividers, move cursor while a tab is dragged.
 
 ### Changed
 
