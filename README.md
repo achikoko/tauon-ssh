@@ -33,6 +33,17 @@ No companies, registration forms nor paywalls, and written in a nice language (J
 I forked Muon into a new application instead of pulling request the original 
 because I knew from the beginning I'd refactor it heavily.
 
+### AI is used here
+
+AI is used here: I use an LLM (Claude) as a coding assistant to help me develop Tauon in my spare time.
+This is done following good engineering practices:
+
+- Every change is reviewed by me before it is merged, just like code written by any other contributor.
+- Work is done in small, focused branches and commits, so each change can be reviewed and reverted on its own.
+- Changes are built and tested before they are committed, and decisions and trade-offs are documented
+  (see the [CHANGELOG](CHANGELOG.md) and [the JediTerm fork notes](https://github.com/achiikun/jediterm/blob/master/TAUON_FORK.md)).
+- Commits made with AI assistance are marked with a `Co-Authored-By` trailer, so they are easy to identify.
+
 ## Building from source:
 
 > This is a Gradle project. Building requires **JDK 17+** (Gradle 9 needs it); the resulting jar still runs on Java 11.
