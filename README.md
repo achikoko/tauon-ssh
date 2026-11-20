@@ -79,7 +79,7 @@ flatpak-builder --force-clean --sandbox --user --install --install-deps-from=fla
 
 The [TODO](TODO.md) file contains what is currently developed and scheduled to develop.
 
-The [CHANGES](CHANGES.md) file contains the changes in each version and kind of roadmap for the next one.
+The [CHANGELOG](CHANGELOG.md) file contains the changes in each version.
 
 ### Not features
 
