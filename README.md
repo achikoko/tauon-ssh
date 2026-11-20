@@ -92,6 +92,15 @@ The [TODO](TODO.md) file contains what is currently developed and scheduled to d
 
 The [CHANGELOG](CHANGELOG.md) file contains the changes in each version.
 
+### Versioning
+
+Tauon uses [Romantic Versioning (RomVer)](https://romversioning.github.io/romver/), not SemVer.
+Versions are `PROJECT.MAJOR.MINOR`:
+
+- **PROJECT** is increased when Tauon changes so much it could be considered a new project.
+- **MAJOR** is increased with breaking changes (e.g. settings, sessions or build that need migrating).
+- **MINOR** is increased with backwards-compatible features and bug fixes.
+
 ### Not features
 
 * Dropped support for multilanguage as it messes with the length of buttons and also thinking as English as the only universal programming language in this beautiful world.

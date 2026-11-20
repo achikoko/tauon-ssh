@@ -6,30 +6,29 @@ changed or the bug that was fixed.
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-11-20
+
+### Added
+
+- Session Status screen to monitor each session's forwarded ports and their connection state (established, initiating, stopped, error, disabled).
+- Name and enable option for each port forwarding.
+- Keyboard shortcuts as in Muon ([42af469](https://github.com/achikoko/tauon-ssh/commit/42af469b8c9b44b6b00a931fcbecf39375c838d4), [185ade3](https://github.com/achikoko/tauon-ssh/commit/185ade3c1df35cf3e4252749afe42a66300824c7)).
+- Option to open the window in its last location ([0fbe592](https://github.com/achikoko/tauon-ssh/commit/0fbe5923df2ded6751ae60331896d934810a2e80)).
+- Copying text from tmux ([JetBrains/jediterm 97de919](https://github.com/JetBrains/jediterm/commit/97de9196b8ee24ca5535750313de0733f22fa923)).
+- `./gradlew run` task to run Tauon from sources.
+
 ### Changed
 
 - Build migrated from Maven to Gradle 9.6 (`./gradlew build`); building needs JDK 17+, the app still runs on Java 11.
 - Jar is now `tauon-app/build/libs/tauonssh.jar` and the Debian package `tauon-app/build/distributions/tauonssh_<version>.deb`.
-- Updated JediTerm to version 3.76, synced with upstream [JetBrains/jediterm](https://github.com/JetBrains/jediterm).
+- Updated JediTerm from 3.53 to 3.76, now synced with upstream [JetBrains/jediterm](https://github.com/JetBrains/jediterm) and built from source as a Gradle included build.
 - Mouse mode for DECSET 9 (X10, press-only reporting) renamed to `MouseMode.MOUSE_REPORTING_X10`; DECSET 1000 uses upstream's `MOUSE_REPORTING_NORMAL` again.
 - EDT helpers `invokeAndWaitIfNeeded`/`invokeLaterIfNeeded` moved from `com.intellij.util.ui.UIUtil` to `tauon.app.util.misc.UIUtil`.
+- Versioning follows [Romantic Versioning](https://romversioning.github.io/romver/) (`PROJECT.MAJOR.MINOR`).
 
 ### Removed
 
 - Legacy `com.intellij.*` utility classes and the trove4j/eawtstub jars from the JediTerm fork.
-
-## [3.3.1-SNAPSHOT] - 2025-12-11
-
-### Added
-
-- Keyboard shortcuts as in Muon ([42af469](https://github.com/achikoko/tauon-ssh/commit/42af469b8c9b44b6b00a931fcbecf39375c838d4), [185ade3](https://github.com/achikoko/tauon-ssh/commit/185ade3c1df35cf3e4252749afe42a66300824c7)).
-- Option to open the window in its last location ([0fbe592](https://github.com/achikoko/tauon-ssh/commit/0fbe5923df2ded6751ae60331896d934810a2e80)).
-- Name and enable option for each port forwarding.
-- Copying text from tmux ([JetBrains/jediterm 97de919](https://github.com/JetBrains/jediterm/commit/97de9196b8ee24ca5535750313de0733f22fa923)).
-
-### Changed
-
-- Updated JediTerm to version 3.57.
 
 ### Fixed
 

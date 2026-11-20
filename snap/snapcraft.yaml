@@ -1,5 +1,5 @@
 name: tauon
-version: "3.3.0"
+version: "4.0.0"
 summary: Graphical SFTP client and terminal emulator with helpful utilities
 description: |
   Tauon is a graphical SSH client. It has a file browser,

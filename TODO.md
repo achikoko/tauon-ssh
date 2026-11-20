@@ -13,7 +13,7 @@ List of identified features and bugs to be solved:
 * [X] Don't blink the screen every time a folder is updated. Plus made more UX friendly.
 * [X] Native Windows File Picker, AWT for Linux, Swing for Mac :D
 * [X] Support X11 on Mac
-* [ ] Add a connection status page (list of active forwarding ports)
+* [X] Add a connection status page (list of active forwarding ports)
 * [X] Add a name and an enable check to each port forwarding
 * [ ] Run ports with sudo by default
 * [ ] Open the program in the last location, or in the active screen if multiple
