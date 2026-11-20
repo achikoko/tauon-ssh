@@ -3,7 +3,7 @@
  */
 package tauon.app.ui.containers.session;
 
-import com.intellij.util.ui.UIUtil;
+import tauon.app.util.misc.UIUtil;
 import net.schmizz.sshj.userauth.password.PasswordFinder;
 import net.schmizz.sshj.userauth.password.Resource;
 import org.slf4j.Logger;

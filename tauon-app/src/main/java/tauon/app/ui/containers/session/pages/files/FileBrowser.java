@@ -1,6 +1,6 @@
 package tauon.app.ui.containers.session.pages.files;
 
-import com.intellij.util.ui.UIUtil;
+import tauon.app.util.misc.UIUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tauon.app.exceptions.RemoteOperationException;
