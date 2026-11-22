@@ -90,6 +90,10 @@ the address bar and `NavigationHistory` on the EDT only after the folder was lis
 
 Paths below are relative to `ui/containers/session/pages/files/`.
 
+- [x] **O0 — high — Paste never worked.** The system clipboard returns a deserialized `DndTransferData`, whose
+  views are `transient`: `getSource()` was always `null`, so `SshFileBrowserView.handleDrop` took the remote files for
+  local ones and tried to upload them. Paste now looks the views up by UUID like drag and drop does
+  (`DndTransferHandler.resolveViews`).
 - [x] **O1 — high — File names go into remote shell commands without escaping.** Paths are only wrapped in `"…"`
   (`ssh/SshFileOperations.java:37,82-88,166-172,256,307,380,453`, `ssh/ArchiveOperation.java:27-48,142,152`,
   `ssh/PropertiesDialog.java:400,445`, `ssh/SshMenuHandler.java:710,714,723`,

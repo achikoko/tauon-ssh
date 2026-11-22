@@ -22,6 +22,7 @@ changed or the bug that was fixed.
 
 ### Fixed
 
+- Copy/cut and paste between folders of the same server works: the clipboard returns a deserialized copy without its source view, so paste took the remote files for local ones and tried to upload them (`DndTransferHandler.resolveViews`).
 - File browser: file names are quoted for the remote shell (`ShellUtils.quote`) in delete, move, copy, rename, new file/folder, archive, properties, terminal and remote-to-remote commands; names with `"`, `$`, backticks or `'` no longer run commands or hit other files.
 - Sudo runs the whole command line as root (`sudo sh -c '…'` in `SSHCommandRunner`); a multi-file move/copy ran only its first command with sudo.
 - Multi-file move/copy reports a failure of any file, not only of the last one (`SshFileOperations.transferScript`).

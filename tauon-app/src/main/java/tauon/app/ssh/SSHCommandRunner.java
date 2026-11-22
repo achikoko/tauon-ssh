@@ -54,6 +54,14 @@ public class SSHCommandRunner {
     
     }
     
+    /**
+     * @return {@code command} run as root; through {@code sh -c} so that every command of a chained command line
+     * ("a; b", "a && b", pipes) runs as root, not just the first. {@code prompt} must not contain {@code '}.
+     */
+    static String sudoCommandLine(String prompt, String command, boolean preserveEnv) {
+        return "sudo -S" + (preserveEnv ? " -E" : "") + " -p '" + prompt + "' " + ShellUtils.sh(command);
+    }
+
     public SSHCommandRunner withCommand(String command){
         this.command = command;
         return this;
@@ -148,9 +156,7 @@ public class SSHCommandRunner {
                 // Sudo NOT needs to allocate a pty, this action provokes the stderr to be mixed with stdout,
                 // By setting -S option, the password sending works fine
 //                session.allocatePTY("vt100", 80, 24, 0, 0, Collections.emptyMap());
-                // sh -c: every command of a chained command line ("a; b", "a && b", pipes) runs as root, not just the first
-                fullCommandStringBuilder.append("sudo -S").append(envVars != null ? " -E" : "").append(" -p '").append(prompt).append("' ")
-                        .append(ShellUtils.sh(command));
+                fullCommandStringBuilder.append(sudoCommandLine(prompt, command, envVars != null));
             }else{
                 fullCommandStringBuilder.append(command);
             }

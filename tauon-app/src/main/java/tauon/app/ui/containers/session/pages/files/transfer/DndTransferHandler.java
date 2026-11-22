@@ -11,6 +11,7 @@ import tauon.app.exceptions.SessionClosedException;
 import tauon.app.ssh.filesystem.FileInfo;
 import tauon.app.ssh.filesystem.FileType;
 import tauon.app.ssh.filesystem.LocalFileSystem;
+import tauon.app.ui.containers.main.AppWindow;
 import tauon.app.ui.containers.session.AbstractSessionContentPanel;
 import tauon.app.ui.containers.session.SessionContentPanel;
 import tauon.app.ui.containers.session.pages.files.AbstractFileBrowserView;
@@ -160,6 +161,41 @@ public class DndTransferHandler extends TransferHandler implements Transferable 
     }
 
     /**
+     * Sets the source and destination views of data that went through drag and drop or the clipboard: they travel
+     * serialized, so only their session and view UUIDs survive, and {@link DndTransferData#getSource()} is
+     * {@code null} until this is called.
+     *
+     * @return {@code false} if a view it names is no longer open
+     */
+    public static boolean resolveViews(DndTransferData transferData, AppWindow appWindow) {
+        if (transferData.getSourceFileBrowserSessionId() != null) {
+            AbstractFileBrowserView view = findView(appWindow, transferData.getSourceFileBrowserSessionId(),
+                    transferData.getSourceFileBrowserId());
+            if (view == null) {
+                return false;
+            }
+            transferData.setSource(view);
+        }
+        if (transferData.getDestinationFileBrowserSessionId() != null) {
+            AbstractFileBrowserView view = findView(appWindow, transferData.getDestinationFileBrowserSessionId(),
+                    transferData.getDestinationFileBrowserId());
+            if (view == null) {
+                return false;
+            }
+            transferData.setDestination(view);
+        }
+        return true;
+    }
+
+    private static AbstractFileBrowserView findView(AppWindow appWindow, UUID sessionId, UUID viewId) {
+        AbstractSessionContentPanel session = appWindow.findSessionById(sessionId);
+        if (viewId == null || !(session instanceof SessionContentPanel)) {
+            return null;
+        }
+        return ((SessionContentPanel) session).getFileBrowser().findViewById(viewId);
+    }
+
+    /**
      * When importing always DATA_FLAVOR_DATA_FILE will be preferred over file list
      */
     @Override
@@ -194,47 +230,9 @@ public class DndTransferHandler extends TransferHandler implements Transferable 
         if (isDataFile) {
             try {
                 DndTransferData transferData = (DndTransferData) t.getTransferData(DATA_FLAVOR_DATA_FILE);
-                
-                UUID sourceSessionId = transferData.getSourceFileBrowserSessionId();
-                UUID sourceId = transferData.getSourceFileBrowserId();
-                
-                if(sourceSessionId != null){
-                    
-                    AbstractSessionContentPanel sessionContentPanel = fileBrowserView.getFileBrowser().getHolder().getAppWindow()
-                            .findSessionById(sourceSessionId);
-                    
-                    if(sourceId == null || !(sessionContentPanel instanceof SessionContentPanel))
-                        return false;
-                    
-                    AbstractFileBrowserView view = ((SessionContentPanel) sessionContentPanel).getFileBrowser().findViewById(sourceId);
-                    if(view == null)
-                        return false;
-                    
-                    transferData.setSource(view);
-                    
+                if (!resolveViews(transferData, fileBrowserView.getFileBrowser().getHolder().getAppWindow())) {
+                    return false;
                 }
-                
-                
-                UUID destinationSessionId = transferData.getDestinationFileBrowserSessionId();
-                UUID destinationId = transferData.getDestinationFileBrowserId();
-                
-                if(destinationSessionId != null){
-                    
-                    SessionContentPanel sessionContentPanel = (SessionContentPanel) fileBrowserView.getFileBrowser()
-                            .getHolder().getAppWindow().findSessionById(destinationSessionId);
-                    
-                    if(sessionContentPanel == null || destinationId == null)
-                        return false;
-                    
-                    AbstractFileBrowserView view = sessionContentPanel.getFileBrowser().findViewById(destinationId);
-                    if(view == null)
-                        return false;
-                    
-                    transferData.setDestination(view);
-                    
-                }
-                
-                
                 return this.fileBrowserView.handleDrop(transferData);
             } catch (UnsupportedFlavorException e) {
                 e.printStackTrace();

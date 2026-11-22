@@ -618,7 +618,13 @@ public class SshMenuHandler {
                 DndTransferData transferData = (DndTransferData) Toolkit.getDefaultToolkit().getSystemClipboard()
                         .getData(DndTransferHandler.DATA_FLAVOR_DATA_FILE);
                 if (transferData != null) {
-                    fileBrowserView.handleDrop(transferData);
+                    // The clipboard serializes it: find the views it was copied from again
+                    if (DndTransferHandler.resolveViews(transferData, fileBrowser.getHolder().getAppWindow())) {
+                        fileBrowserView.handleDrop(transferData);
+                    } else {
+                        JOptionPane.showMessageDialog(fileBrowserView,
+                                getBundle().getString("app.files.message.paste_source_closed"));
+                    }
                 }
             } catch (UnsupportedFlavorException e1) {
                 throw new LocalOperationException.UnsupportedFlavorException(e1);
