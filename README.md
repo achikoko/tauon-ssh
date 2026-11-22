@@ -82,6 +82,7 @@ flatpak-builder --force-clean --sandbox --user --install --install-deps-from=fla
 * Fast powerful file and content search, powered by find command
 * Built in terminal and command snippet
 * X11 Forwarding
+* VNC connections through an SSH tunnel, opened in the external TurboVNC viewer
 * Fully equipped task manager
 * Built in graphical disk space analyzer
 * Linux specific tools
