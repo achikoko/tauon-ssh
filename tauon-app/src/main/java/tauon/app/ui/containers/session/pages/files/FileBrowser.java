@@ -220,7 +220,9 @@ public class FileBrowser extends Page {
             }
 
             // Download through the session the files come from, which may not be this one
-            source.getFileBrowser().downloadInBackground(transferData.getFiles(), currentPath);
+            // ...and refresh the local browsers of this one showing the folder, once the files are there
+            source.getFileBrowser().downloadInBackground(transferData.getFiles(), currentPath,
+                    () -> localFoldersChanged(List.of(currentPath)));
 //            if (source.getFileBrowser() == this) {
 //                if (SettingsConfigManager.getSettings().getFileTransferMode() == Constants.TransferMode.BACKGROUND) {
 //                    return true;
@@ -272,7 +274,17 @@ public class FileBrowser extends Page {
         
     }
     
+    /** Downloads with this session; the local browsers of this file browser showing the target reload when done. */
     public void downloadInBackground(FileInfo[] remoteFiles, String targetLocalDirectory) {
+        downloadInBackground(remoteFiles, targetLocalDirectory, () -> localFoldersChanged(List.of(targetLocalDirectory)));
+    }
+    
+    /**
+     * Downloads with this session.
+     *
+     * @param onFinished runs on the EDT when the download ends (to refresh the views showing the target)
+     */
+    public void downloadInBackground(FileInfo[] remoteFiles, String targetLocalDirectory, Runnable onFinished) {
         
         FileTransferRemoteToLocal transfer = new FileTransferRemoteToLocal(
                 remoteFiles, targetLocalDirectory, new ToGuiThread(getHolder()), sshConnectionHandler,
@@ -283,7 +295,7 @@ public class FileBrowser extends Page {
             transfer.prepareTransfer(instance.getSshFileSystem());
             
             if(transfer.isPrepared()) {
-                getHolder().getAppWindow().startFileTransfer(transfer);
+                getHolder().getAppWindow().startFileTransfer(transfer, onFinished);
             }
             
         });
@@ -317,23 +329,33 @@ public class FileBrowser extends Page {
         });
         
         if(transfer.isPrepared()) {
-            getHolder().getAppWindow().startFileTransfer(transfer);
+            getHolder().getAppWindow().startFileTransfer(transfer,
+                    () -> remoteFoldersChanged(List.of(targetRemoteDirectory)));
         }
         
     }
 
     /**
-     * The contents of {@code folders} changed (files moved, copied...): drops their cached listings and reloads the
-     * remote browsers showing them, so none keeps showing files that are gone. Callable from any thread.
+     * The contents of these remote folders changed (files moved, copied, uploaded...): drops their cached listings and
+     * reloads the remote browsers showing them, so none keeps showing stale files. Callable from any thread.
      */
-    public void foldersChanged(Collection<String> folders) {
+    public void remoteFoldersChanged(Collection<String> folders) {
         sshDirCache.keySet().removeIf(cached -> folders.stream().anyMatch(f -> PathUtils.isSamePath(f, cached)));
+        reloadViewsShowing(SshFileBrowserView.class, folders);
+    }
+
+    /** The contents of these local folders changed (files downloaded...): reloads the local browsers showing them. */
+    public void localFoldersChanged(Collection<String> folders) {
+        reloadViewsShowing(LocalFileBrowserView.class, folders);
+    }
+
+    private void reloadViewsShowing(Class<? extends AbstractFileBrowserView> type, Collection<String> folders) {
         SwingUtilities.invokeLater(() -> {
             for (AbstractFileBrowserView view : viewList.values()) {
                 String shown = view.getCurrentDirectory();
-                if (view instanceof SshFileBrowserView && shown != null
+                if (type.isInstance(view) && shown != null
                         && folders.stream().anyMatch(f -> PathUtils.isSamePath(f, shown))) {
-                    view.reload();
+                    view.reload(); // keeps sorting and selection
                 }
             }
         });

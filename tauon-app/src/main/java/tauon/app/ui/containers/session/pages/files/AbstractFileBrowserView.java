@@ -317,9 +317,11 @@ public abstract class AbstractFileBrowserView extends JPanel implements FolderVi
     }
 
     private void showListing(String listedPath, List<FileInfo> files) {
+        // Same folder listed again (reload, refresh after a transfer): keep the selection and scroll position
+        boolean sameFolder = PathUtils.isSamePath(this.path, listedPath);
         this.path = listedPath;
         addressBar.setText(listedPath);
-        folderView.setItems(files);
+        folderView.setItems(files, sameFolder);
         setTabTitle(listedPath);
         fileBrowser.updateRemoteStatus(String.format("Total %d file(s)", files.size()));
     }

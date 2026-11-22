@@ -23,6 +23,7 @@ List of identified features and bugs to be solved:
 * [ ] Store securely proxy password
 * [ ] Let user upload private key files and store them securely
 * [ ] UI: Add countdown in the connecting dialog
+* [ ] UI: Open dialogs centered on the application window, not on the screen (many `JOptionPane` calls pass a `null` parent)
 * [ ] Add VNC viewer (from tightvnc-java)
 * [ ] Windows with cygwin (https://x.cygwin.com/docs/ug/cygwin-x-ug.pdf)
 * [ ] Recover text editor from old snowflake
@@ -34,7 +35,7 @@ List of identified features and bugs to be solved:
 * [ ] File Browser:
   * [X] Download is not implemented
   * [X] Unify behavior for all file tasks (ask for sudo, ask for reconnect)
-  * [ ] Refresh window after copying files
+  * [X] Refresh window after copying files
   * [ ] Add a box to query what happens when copying a file that exists
   * [ ] Move an item to a folder in the same window
   * [ ] Create a remote folder picker

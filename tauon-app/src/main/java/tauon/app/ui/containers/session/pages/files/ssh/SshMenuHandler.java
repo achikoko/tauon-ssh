@@ -684,9 +684,9 @@ public class SshMenuHandler {
     }
 
     private void foldersChanged(List<String> folders, FileBrowser sourceBrowser) {
-        fileBrowser.foldersChanged(folders);
+        fileBrowser.remoteFoldersChanged(folders);
         if (sourceBrowser != null && sourceBrowser != fileBrowser) {
-            sourceBrowser.foldersChanged(folders);
+            sourceBrowser.remoteFoldersChanged(folders);
         }
     }
 

@@ -118,4 +118,29 @@ public class FolderViewTest {
         enter.actionPerformed(null);
         assertEquals(List.of("/tmp/dir"), navigated);
     }
+
+    @Test
+    public void listingTheSameFolderAgainKeepsSortAndSelection() {
+        view.setItems(List.of(local("a", FileType.FILE, 1), local("b", FileType.FILE, 2), local("c", FileType.FILE, 3)));
+        view.sort(0, SortOrder.DESCENDING);
+        view.getFileList().setSelectedIndex(1); // "b"
+
+        // A transfer finished: "d" arrived, the folder is listed again
+        view.setItems(List.of(local("a", FileType.FILE, 1), local("b", FileType.FILE, 2), local("c", FileType.FILE, 3),
+                local("d", FileType.FILE, 4)), true);
+
+        assertEquals(List.of("d", "c", "b", "a"), names(view.getFileList()));
+        FileInfo[] selected = view.getSelectedFiles();
+        assertEquals(1, selected.length);
+        assertEquals("b", selected[0].getName());
+    }
+
+    @Test
+    public void listingAnotherFolderDoesNotCarryTheSelectionOver() {
+        view.setItems(List.of(local("src", FileType.DIR, 1), local("b", FileType.FILE, 2)));
+        view.getTable().setRowSelectionInterval(0, 1);
+
+        view.setItems(List.of(local("src", FileType.DIR, 1)), false);
+        assertEquals(0, view.getSelectedFiles().length);
+    }
 }

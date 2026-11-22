@@ -22,6 +22,7 @@ changed or the bug that was fixed.
 
 ### Fixed
 
+- When an upload or download started by drag and drop (or Download to...) finishes, the browsers showing the target folder reload; re-listing a folder keeps its sorting, selection and scroll position (`AppWindow.startFileTransfer(transfer, onFinished)`, `FileBrowser.remoteFoldersChanged`/`localFoldersChanged`).
 - File browser list (icon) view: it shows the files in the table's sort order and shares its selection, so menus, Enter and drag and drop act on the files selected in the list (`FolderView`).
 - Sorting a local folder by Owner or Permissions no longer throws `NullPointerException`; nor does Ctrl+H (hidden files) before the first listing.
 - A local folder without read permission is reported ("Access denied") instead of shown as empty (`LocalOperationException.AccessDenied`).

@@ -23,8 +23,10 @@ import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class FolderView extends JPanel {
@@ -396,8 +398,40 @@ public class FolderView extends JPanel {
     }
 
     public void setItems(List<FileInfo> list) {
+        setItems(list, false);
+    }
+
+    /**
+     * Shows {@code list}; the sort order is kept.
+     *
+     * @param keepSelection the same folder is listed again: reselect the files selected before (by name) and keep the
+     *                      scroll position
+     */
+    public void setItems(List<FileInfo> list, boolean keepSelection) {
+        Set<String> selected = new HashSet<>();
+        Point tablePosition = tableScroller.getViewport().getViewPosition();
+        Point listPosition = listScroller.getViewport().getViewPosition();
+        if (keepSelection) {
+            for (FileInfo f : getSelectedFiles()) {
+                selected.add(f.getName());
+            }
+        }
+
         this.files = list;
         applyFilter();
+
+        if (keepSelection) {
+            for (int row = 0; row < table.getRowCount(); row++) {
+                if (selected.contains(folderViewModel.getItemAt(table.convertRowIndexToModel(row)).getName())) {
+                    table.addRowSelectionInterval(row, row);
+                }
+            }
+            // After the new rows are laid out
+            SwingUtilities.invokeLater(() -> {
+                tableScroller.getViewport().setViewPosition(tablePosition);
+                listScroller.getViewport().setViewPosition(listPosition);
+            });
+        }
     }
 
     public final void resizeColumnWidth(JTable table) {

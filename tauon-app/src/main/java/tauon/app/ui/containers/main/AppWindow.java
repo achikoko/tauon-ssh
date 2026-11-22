@@ -255,6 +255,14 @@ public class AppWindow extends JFrame {
     }
     
     public void startFileTransfer(FileTransfer fileTransfer) {
+        startFileTransfer(fileTransfer, null);
+    }
+    
+    /**
+     * @param onFinished runs on the EDT when the transfer ends, successfully or not (files copied before an error
+     *                   are there too); {@code null} for none
+     */
+    public void startFileTransfer(FileTransfer fileTransfer, Runnable onFinished) {
         
         FileTransferProgress t;
         
@@ -266,8 +274,19 @@ public class AppWindow extends JFrame {
             t = null;
         }
         
-        if (t != null)
-            fileTransfer.setProgressListener(t);
+        FileTransferProgress finished = onFinished == null ? null : new FileTransferProgress.Adapter() {
+            @Override
+            public void error(String cause, Exception e) {
+                SwingUtilities.invokeLater(onFinished);
+            }
+            
+            @Override
+            public void done() {
+                SwingUtilities.invokeLater(onFinished);
+            }
+        };
+        if (t != null || finished != null)
+            fileTransfer.setProgressListener(new FileTransferProgress.Compose(t, finished));
         
         getBackgroundTransferPool().submit(fileTransfer);
 
