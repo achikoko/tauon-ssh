@@ -44,6 +44,8 @@ public class SitesConfigManager {
     
     private boolean passwordsUnlocked;
     private char[] masterPassword;
+    /** The sessions file held secrets in plain text (written before they moved to the passwords file). */
+    private boolean plainTextSecretsFound;
     
     public static SitesConfigManager getInstance() {
         if(INSTANCE == null){
@@ -99,6 +101,7 @@ public class SitesConfigManager {
                             
                             String content = new String(Files.readAllBytes(sessionsFile.toPath()));
                             tempSessionTree = readSitesTreeFromContent(content);
+                            plainTextSecretsFound = hasPlainTextSecrets(tempSessionTree.getFolder());
                             
                         }else{
                             SessionFolder rootFolder = new SessionFolder();
@@ -174,6 +177,14 @@ public class SitesConfigManager {
                 passwordMap = new HashMap<>();
             }
             
+            if (success && plainTextSecretsFound && savedSessionTree != null) {
+                // Move them to the encrypted passwords file right away
+                LOG.info("Moving plain text proxy passwords from the sessions file to the passwords file.");
+                if (save(passwordPromptConsumer)) {
+                    plainTextSecretsFound = false;
+                }
+            }
+            
         }
         
         return savedSessionTree;
@@ -191,11 +202,19 @@ public class SitesConfigManager {
                         info.setPassword(new String(password.infoPassword));
                     }
                     
-                    int i = 0;
-                    for (char[] hopPass : password.hopPasswords) {
-                        if (hopPass != null && i < info.getJumpHosts().size()) {
-                            info.getJumpHosts().get(i).setPassword(new String(hopPass));
+                    if (password.hopPasswords != null) {
+                        // Stored in jump host order (rebuilt from the list on every save)
+                        for (int i = 0; i < password.hopPasswords.length && i < info.getJumpHosts().size(); i++) {
+                            char[] hopPass = password.hopPasswords[i];
+                            if (hopPass != null) {
+                                info.getJumpHosts().get(i).setPassword(new String(hopPass));
+                            }
                         }
+                    }
+                    
+                    // A plain text value still in the sessions file wins: only an older version writes it there
+                    if (password.proxyPassword != null && isBlank(info.getProxyPassword())) {
+                        info.setProxyPassword(new String(password.proxyPassword));
                     }
                     
                     if (password.vncPasswords != null) {
@@ -221,18 +240,43 @@ public class SitesConfigManager {
     
     private static void setPasswords(SessionFolder folder, Map<String, PasswordEntry> passwordMap) {
         for (SiteInfo info : folder.getItems()) {
-            setPassword(info.getId(), info.getPassword(), info.getHopPasswords(), passwordMap);
-            setVncPasswords(info, passwordMap);
+            setSecrets(info, passwordMap);
         }
         for (SessionFolder f : folder.getFolders()) {
             setPasswords(f, passwordMap);
         }
     }
     
-    private static void setPassword(String alias, String password, char[][] hopPasswords, Map<String, PasswordEntry> passwordMap) {
-        PasswordEntry e = passwordMap.computeIfAbsent(alias, k -> new PasswordEntry());
-        e.infoPassword = password == null || password.isBlank() ? null : password.toCharArray();
-        e.hopPasswords = hopPasswords;
+    /** Copies every secret of the site (password, jump host, proxy and VNC passwords) into its password entry. */
+    static void setSecrets(SiteInfo info, Map<String, PasswordEntry> passwordMap) {
+        PasswordEntry e = passwordMap.computeIfAbsent(info.getId(), k -> new PasswordEntry());
+        e.infoPassword = toChars(info.getPassword());
+        e.hopPasswords = info.getHopPasswords();
+        e.proxyPassword = toChars(info.getProxyPassword());
+        setVncPasswords(info, passwordMap);
+    }
+    
+    private static char[] toChars(String secret) {
+        return isBlank(secret) ? null : secret.toCharArray();
+    }
+    
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
+    }
+    
+    /** Whether a tree read from the sessions file has secrets stored there in plain text. */
+    static boolean hasPlainTextSecrets(SessionFolder folder) {
+        for (SiteInfo info : folder.getItems()) {
+            if (!isBlank(info.getProxyPassword())) {
+                return true;
+            }
+        }
+        for (SessionFolder f : folder.getFolders()) {
+            if (hasPlainTextSecrets(f)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     static void setVncPasswords(SiteInfo info, Map<String, PasswordEntry> passwordMap) {
@@ -245,11 +289,6 @@ public class SitesConfigManager {
             }
         }
         e.vncPasswords = vncPasswords;
-    }
-    
-    private static void setPassword(String alias, String password, Map<String, PasswordEntry> passwordMap) {
-        PasswordEntry e = passwordMap.computeIfAbsent(alias, k -> new PasswordEntry());
-        e.infoPassword = password == null || password.isBlank() ? null : password.toCharArray();
     }
     
     private char[] getOrAskForMasterPassword(PasswordPromptConsumer passwordPromptConsumer, boolean creatingPassword, boolean promptTryAgain) throws OperationCancelledException {
@@ -405,8 +444,7 @@ public class SitesConfigManager {
     }
     
     public void setPasswordsFrom(SiteInfo session) {
-        setPassword(session.getId(), session.getPassword(), session.getHopPasswords(), passwordMap);
-        setVncPasswords(session, passwordMap);
+        setSecrets(session, passwordMap);
     }
     
     public boolean changeStorePassword(char[] newPassword, PasswordPromptConsumer passwordPromptConsumer) throws OperationCancelledException {
@@ -454,6 +492,8 @@ public class SitesConfigManager {
     public static class PasswordEntry{
         public char[] infoPassword;
         public char[][] hopPasswords;
+        /** Null in files written while the proxy password was kept in plain text in the sessions file. */
+        public char[] proxyPassword;
         /** VNC connection id to its password; null in files written before VNC connections existed. */
         public Map<String, char[]> vncPasswords;
     }

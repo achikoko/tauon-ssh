@@ -1,5 +1,7 @@
 package tauon.app.settings;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,7 @@ public class SiteInfo extends HopEntry implements Serializable {
     private int proxyPort = 8080;
     private String proxyHost;
     private String proxyUser;
-    private String proxyPassword; // TODO encrypt
+    private String proxyPassword; // stored encrypted in the passwords file
     private int proxyType = 0;
     
     private boolean XForwardingEnabled = false;
@@ -170,6 +172,8 @@ public class SiteInfo extends HopEntry implements Serializable {
     /**
      * @return the proxyPassword
      */
+    // Read from old sessions files (migrated to the passwords file), never written there
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getProxyPassword() {
         return proxyPassword;
     }

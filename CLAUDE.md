@@ -37,6 +37,8 @@ process/disk tools, port forwarding. Runs on Java 11+, Linux/Windows (macOS best
     (PBE/AES-256 with the master password, or an empty password if none). `populatePasswordsInto`/`setPasswords`
     copy secrets between that map and the `SiteInfo` tree. Adding a secret = new field in `PasswordEntry`
     (deserialization ignores unknown/missing fields, so older files keep loading).
+    `SiteInfo.proxyPassword` is read from old sessions files but never written (`WRITE_ONLY`); `getSessionTree`
+    saves right away when it finds one, moving it to `passwords.pfx`.
 - `ssh/` — `SSHConnectionHandler` (per session) owns `TauonSSHClient` (sshj; hops, X11, port forwarding).
   `TauonSSHClient.PortForwardingState` runs each `-L`/`-R` rule and exposes a `ConnectionStatusValue`.
 - `ui/containers/session/` — `SessionContentPanel` (one per open session) hosts the pages: files, terminal, logs,
@@ -65,9 +67,3 @@ process/disk tools, port forwarding. Runs on Java 11+, Linux/Windows (macOS best
 - Keep the look and feel: reuse `App.skin` colors/fonts, `SkinnedSplitPane`, `SkinnedScrollPane`, FontAwesome icons
   (`FontAwesomeContants`).
 - No new dependencies without asking (e.g. VNC is planned via an external TurboVNC viewer, not a Java library).
-
-## Known issues
-
-- `SitesConfigManager.populatePasswordsInto` never increments its hop index: all jump-host passwords load into the
-  first jump host.
-- `SiteInfo.proxyPassword` is stored in plain JSON (`// TODO encrypt`).

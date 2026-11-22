@@ -22,6 +22,8 @@ changed or the bug that was fixed.
 
 ### Fixed
 
+- Jump host passwords load into their own jump host; they were all loaded into the first one, so the others were lost on the next save (`SitesConfigManager.populatePasswordsInto`).
+- Proxy password is stored encrypted in `passwords.pfx` instead of plain text in the sessions file (`PasswordEntry.proxyPassword`); existing plain text values are moved there on startup.
 - Update checker compares versions number by number (`VersionEntry.compareTo`); `4.0.10` and `4.1.0` no longer collide and suffixed tags like `v3.3.0-r1` no longer break it.
 
 ## [4.0.0] - 2026-11-20
