@@ -13,6 +13,7 @@ import tauon.app.services.SettingsConfigManager;
 import tauon.app.services.SitesConfigManager;
 import tauon.app.settings.BackupUtils;
 import tauon.app.settings.Settings;
+import tauon.app.ui.components.misc.SkinnedTextField;
 import tauon.app.ui.components.misc.*;
 import tauon.app.ui.dialogs.sessions.PasswordPromptHelper;
 import tauon.app.ui.laf.theme.CustomTerminalTheme;
@@ -61,6 +62,7 @@ public class SettingsDialog extends JDialog {
     private ColorSelectorButton[] paletteButtons;
     private ColorSelectorButton defaultColorFg, defaultColorBg, defaultSelectionFg, defaultSelectionBg, defaultFoundFg,
             defaultFoundBg;
+    private JTextField txtTurboVncViewerPath;
     private JCheckBox chkConfirmBeforeDelete, chkConfirmBeforeMoveOrCopy, chkShowHiddenFilesByDefault, chkFirstFileBrowserView,
             chkUseSudo, chkPromptForSudo, chkListViewEnabled, chkTransferTemporaryDirectory,
             chkDirectoryCache, chkShowPathBar, chkConfirmBeforeTerminalClosing, chkShowActualDateOnlyHour,
@@ -559,6 +561,10 @@ public class SettingsDialog extends JDialog {
         vbox.add(Box.createRigidArea(new Dimension(10, 10)));
         vbox.add(createRow(new JLabel(getBundle().getString("app.settings.general.label.conflict_action")), Box.createHorizontalGlue(), cmbConflictAction));
         vbox.add(Box.createRigidArea(new Dimension(10, 10)));
+        txtTurboVncViewerPath = new SkinnedTextField(30);
+        txtTurboVncViewerPath.setMaximumSize(txtTurboVncViewerPath.getPreferredSize());
+        vbox.add(createRow(new JLabel(getBundle().getString("app.settings.general.label.turbovnc_path")), Box.createHorizontalGlue(), txtTurboVncViewerPath));
+        vbox.add(Box.createRigidArea(new Dimension(10, 10)));
 
         vbox.setBorder(new EmptyBorder(30, 10, 10, 10));
 
@@ -623,6 +629,7 @@ public class SettingsDialog extends JDialog {
             settings.setRememberLastSizeAndPosition(rbRememberLastSizeAndPosition.isSelected());
             
             settings.setShowActualDateOnlyHour(chkShowActualDateOnlyHour.isSelected());
+            settings.setTurboVncViewerPath(txtTurboVncViewerPath.getText().trim());
     
             settings.setConnectionTimeout((Integer) spConnectionTimeout.getValue());
             settings.setConnectionKeepAlive(spConnectionKeepAlive.isSelected());
@@ -701,6 +708,7 @@ public class SettingsDialog extends JDialog {
         chkConfirmBeforeMoveOrCopy.setSelected(settings.isConfirmBeforeMoveOrCopy());
         chkShowHiddenFilesByDefault.setSelected(settings.isShowHiddenFilesByDefault());
         chkFirstFileBrowserView.setSelected(settings.isFirstFileBrowserView());
+        txtTurboVncViewerPath.setText(settings.getTurboVncViewerPath() != null ? settings.getTurboVncViewerPath() : "");
         chkListViewEnabled.setSelected(settings.isListViewEnabled());
         chkTransferTemporaryDirectory.setSelected(settings.isTransferTemporaryDirectory());
         chkUseSudo.setSelected(settings.isUseSudo());

@@ -12,6 +12,7 @@ import tauon.app.exceptions.OperationCancelledException;
 import tauon.app.settings.NamedItem;
 import tauon.app.settings.SessionFolder;
 import tauon.app.settings.SiteInfo;
+import tauon.app.settings.VncConnection;
 import tauon.app.ui.dialogs.sessions.SavedSessionTree;
 import tauon.app.ui.utils.TreeManager;
 import tauon.app.util.misc.Constants;
@@ -197,6 +198,15 @@ public class SitesConfigManager {
                         }
                     }
                     
+                    if (password.vncPasswords != null) {
+                        for (VncConnection vnc : info.getVncConnections()) {
+                            char[] vncPass = password.vncPasswords.get(vnc.getId());
+                            if (vncPass != null) {
+                                vnc.setPassword(new String(vncPass));
+                            }
+                        }
+                    }
+                    
                 }
                 
             } catch (Exception e) {
@@ -212,6 +222,7 @@ public class SitesConfigManager {
     private static void setPasswords(SessionFolder folder, Map<String, PasswordEntry> passwordMap) {
         for (SiteInfo info : folder.getItems()) {
             setPassword(info.getId(), info.getPassword(), info.getHopPasswords(), passwordMap);
+            setVncPasswords(info, passwordMap);
         }
         for (SessionFolder f : folder.getFolders()) {
             setPasswords(f, passwordMap);
@@ -222,6 +233,18 @@ public class SitesConfigManager {
         PasswordEntry e = passwordMap.computeIfAbsent(alias, k -> new PasswordEntry());
         e.infoPassword = password == null || password.isBlank() ? null : password.toCharArray();
         e.hopPasswords = hopPasswords;
+    }
+    
+    static void setVncPasswords(SiteInfo info, Map<String, PasswordEntry> passwordMap) {
+        PasswordEntry e = passwordMap.computeIfAbsent(info.getId(), k -> new PasswordEntry());
+        Map<String, char[]> vncPasswords = new HashMap<>();
+        for (VncConnection vnc : info.getVncConnections()) {
+            String p = vnc.getPassword();
+            if (p != null && !p.isEmpty()) {
+                vncPasswords.put(vnc.getId(), p.toCharArray());
+            }
+        }
+        e.vncPasswords = vncPasswords;
     }
     
     private static void setPassword(String alias, String password, Map<String, PasswordEntry> passwordMap) {
@@ -383,6 +406,7 @@ public class SitesConfigManager {
     
     public void setPasswordsFrom(SiteInfo session) {
         setPassword(session.getId(), session.getPassword(), session.getHopPasswords(), passwordMap);
+        setVncPasswords(session, passwordMap);
     }
     
     public boolean changeStorePassword(char[] newPassword, PasswordPromptConsumer passwordPromptConsumer) throws OperationCancelledException {
@@ -430,6 +454,8 @@ public class SitesConfigManager {
     public static class PasswordEntry{
         public char[] infoPassword;
         public char[][] hopPasswords;
+        /** VNC connection id to its password; null in files written before VNC connections existed. */
+        public Map<String, char[]> vncPasswords;
     }
     
     public static interface InputStreamOpener {

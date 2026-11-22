@@ -12,6 +12,8 @@ changed or the bug that was fixed.
 - Each split group has its own "+" button; new tabs open in that group (`ClosableTabbedPanel.addTab(Component, Location)`).
 - Esc cancels a tab drag.
 - Cursor feedback: resize cursor on the split dividers, move cursor while a tab is dragged.
+- VNC connections per site (new "VNC" tab: host, port/display, optional password stored encrypted with the other secrets), opened from Session Status → VNC by double-clicking: an SSH tunnel to a random local port and the external TurboVNC viewer (`vncviewer -autopass`, password on stdin). The viewer is monitored: its tunnel closes as soon as it exits, and viewers are killed when the session closes (`tauon.app.vnc.VncSession`).
+- Settings → General: path of the TurboVNC viewer (empty: detected in the standard install locations).
 
 ### Changed
 

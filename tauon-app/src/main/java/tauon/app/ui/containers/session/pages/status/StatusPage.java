@@ -7,6 +7,7 @@ import tauon.app.ui.components.misc.FontAwesomeContants;
 import tauon.app.ui.components.page.subpage.SubpagingPage;
 import tauon.app.ui.containers.session.SessionContentPanel;
 import tauon.app.ui.containers.session.pages.status.portforwarding.PortForwardingStatusPanel;
+import tauon.app.ui.containers.session.pages.status.vnc.VncStatusPanel;
 
 import static tauon.app.services.LanguageService.getBundle;
 
@@ -37,6 +38,12 @@ public class StatusPage extends SubpagingPage {
                 getBundle().getString("app.status_port_forwarding.title"),
                 FontAwesomeContants.FA_ARROW_RIGHT_ARROW_LEFT,
                 new PortForwardingStatusPanel(holder)
+        );
+        addSubpage(
+                "VNC",
+                getBundle().getString("app.status_vnc.title"),
+                FontAwesomeContants.FA_DESKTOP,
+                new VncStatusPanel(holder)
         );
     }
     

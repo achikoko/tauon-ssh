@@ -58,6 +58,22 @@ public class SimpleTable<T> extends JTable {
 //        getColumnModel().getColumn(0).setPreferredWidth(200);
     }
     
+    /** Calls {@code action} with the entity of a row double-clicked with the left button. */
+    public void onDoubleClick(java.util.function.Consumer<T> action) {
+        addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() != 2 || !javax.swing.SwingUtilities.isLeftMouseButton(e)) {
+                    return;
+                }
+                int viewRow = rowAtPoint(e.getPoint());
+                if (viewRow >= 0) {
+                    action.accept(entities.getElementAt(convertRowIndexToModel(viewRow)));
+                }
+            }
+        });
+    }
+
     public List<T> getEntitiesList() {
         return new EntitiesListDelegate(entities);
     }

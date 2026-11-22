@@ -5,5 +5,7 @@ public enum ConnectionStatusValue {
     ERROR,
     ESTABLISHED,
     STOPPED,
-    INITIATING
+    INITIATING,
+    /** A child process (e.g. a VNC viewer) is running. */
+    RUNNING
 }

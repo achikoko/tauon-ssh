@@ -98,6 +98,16 @@ public class Settings {
     private List<EditorEntry> editors = new ArrayList<>();
 
     private String defaultPanel = "FILES";
+    /** The TurboVNC viewer to run; empty to look in the standard install locations. */
+    private String turboVncViewerPath = "";
+
+    public String getTurboVncViewerPath() {
+        return turboVncViewerPath;
+    }
+
+    public void setTurboVncViewerPath(String turboVncViewerPath) {
+        this.turboVncViewerPath = turboVncViewerPath;
+    }
 
     public boolean isConfirmBeforeDelete() {
         return confirmBeforeDelete;

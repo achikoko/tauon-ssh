@@ -47,6 +47,9 @@ process/disk tools, port forwarding. Runs on Java 11+, Linux/Windows (macOS best
 - `ui/components/simpletable/` — `SimpleTable` builder (columns from lambdas) used by the status pages.
 - `ui/dialogs/sessions/` — site editor (`SessionInfoPanel` tabs: connection, directories, proxy, jump hosts,
   port forwarding). Each tab panel edits the `SiteInfo` given to `setInfo`.
+- `vnc/` — `VncSession` (one per site VNC connection, owned by `SSHConnectionHandler`): SSH tunnel
+  (`TauonSSHClient.openLocalTunnel`) + external TurboVNC viewer process, monitored with `Process.onExit()`;
+  `TurboVncLocator` finds the viewer. Shown in Session Status → VNC.
 - `util/misc/PlatformUtils` — OS detection (`IS_WINDOWS`, ...) and launching external programs.
 - i18n: `tauon-app/src/main/resources/i18n/messages.properties` (English only, by design). Use `getBundle().getString(key)`.
 
