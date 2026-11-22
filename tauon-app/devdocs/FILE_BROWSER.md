@@ -95,7 +95,7 @@ Paths below are relative to `ui/containers/session/pages/files/`.
   `ssh/PropertiesDialog.java:400,445`, `ssh/SshMenuHandler.java:710,714,723`,
   `remote2remote/Remote2RemoteTransferDialog.java:232-241`; the sftp heredoc `<<EOF` is unquoted too). Deleting a
   file named `a" ~ "b` runs `rm -rf "/dir/a" ~ "b"` (deletes home); a name containing `$(cmd)` runs `cmd`.
-  Needs one shell-quoting helper (single quotes, `'` → `'\''`) used everywhere.
+  Fixed with `ShellUtils.quote` at every call site (`ShellUtilsTest`, `SshFileOperationsScriptTest`).
 - [x] **O2 — high — Cut/copy in one session and paste or drop into another runs the operation on the wrong
   server.** `SshFileBrowserView.handleDrop` treats any remote source as its own file system (lines 205-217); reached
   from paste (`ssh/SshMenuHandler.java:614-620`) and DnD (`transfer/DndTransferHandler.java:201-213`). Cutting
