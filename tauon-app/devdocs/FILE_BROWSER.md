@@ -79,7 +79,7 @@ the address bar and `NavigationHistory` on the EDT only after the folder was lis
 
 ### Drag and drop
 
-- [ ] **D1 — high — Dragging files between two local tabs starts an SFTP download of local paths.**
+- [x] **D1 — high — Dragging files between two local tabs starts an SFTP download of local paths.**
   `LocalFileBrowserView.handleDrop` forwards any drop from another view to `FileBrowser.handleLocalDrop`, which calls
   `downloadInBackground(transferData.getFiles(), ...)` whenever the source is not `null` (`FileBrowser.java:217`),
   without checking that the source is a remote view.
@@ -90,21 +90,21 @@ the address bar and `NavigationHistory` on the EDT only after the folder was lis
 
 Paths below are relative to `ui/containers/session/pages/files/`.
 
-- [ ] **O1 — high — File names go into remote shell commands without escaping.** Paths are only wrapped in `"…"`
+- [x] **O1 — high — File names go into remote shell commands without escaping.** Paths are only wrapped in `"…"`
   (`ssh/SshFileOperations.java:37,82-88,166-172,256,307,380,453`, `ssh/ArchiveOperation.java:27-48,142,152`,
   `ssh/PropertiesDialog.java:400,445`, `ssh/SshMenuHandler.java:710,714,723`,
   `remote2remote/Remote2RemoteTransferDialog.java:232-241`; the sftp heredoc `<<EOF` is unquoted too). Deleting a
   file named `a" ~ "b` runs `rm -rf "/dir/a" ~ "b"` (deletes home); a name containing `$(cmd)` runs `cmd`.
   Needs one shell-quoting helper (single quotes, `'` → `'\''`) used everywhere.
-- [ ] **O2 — high — Cut/copy in one session and paste or drop into another runs the operation on the wrong
+- [x] **O2 — high — Cut/copy in one session and paste or drop into another runs the operation on the wrong
   server.** `SshFileBrowserView.handleDrop` treats any remote source as its own file system (lines 205-217); reached
   from paste (`ssh/SshMenuHandler.java:614-620`) and DnD (`transfer/DndTransferHandler.java:201-213`). Cutting
   `/etc/app.conf` on A and pasting on B moves B's `/etc/app.conf`. Dropping into a local view downloads with the
   target session's connection as well.
-- [ ] **O3 — high — With sudo, only the first command of a multi-file move/copy runs as root.** Commands are joined
+- [x] **O3 — high — With sudo, only the first command of a multi-file move/copy runs as root.** Commands are joined
   as `mv a b; mv c d;` (`ssh/SshFileOperations.java:106-110,193-197`) and `SSHCommandRunner` prefixes the whole
   string with `sudo -S …` (`tauon/app/ssh/SSHCommandRunner.java:149`); the rest run as the user and fail silently.
-- [ ] **O4 — medium — A multi-file move/copy only checks the last command's exit status**
+- [x] **O4 — medium — A multi-file move/copy only checks the last command's exit status**
   (`ssh/SshFileOperations.java:74-93,158-177`): four failures followed by one success is reported as success, with no
   sudo offer.
 - [ ] **O5 — medium — "Overwrite" on a folder nests it** (`target/conf/conf`): folders use `mv`/`cp -rf` without
@@ -119,7 +119,7 @@ Paths below are relative to `ui/containers/session/pages/files/`.
 - [ ] **O8 — medium — "Run in background" blocks the session.** `nohup "file" &` without redirecting output keeps
   the exec channel open and `SSHCommandRunner.run` joins it (`ssh/SshMenuHandler.java:717-731`); the spinner stays
   until the script ends.
-- [ ] **O9 — medium — Remote-to-remote transfer ignores the saved port**: `sftp user@host` without `-P`
+- [x] **O9 — medium — Remote-to-remote transfer ignores the saved port**: `sftp user@host` without `-P`
   (`remote2remote/Remote2RemoteTransferDialog.java:232`).
 - [ ] **O10 — medium — Adding/removing a remote-to-remote host while the search filter is active erases the hidden
   hosts from disk**: `save()` writes the filtered model (`remote2remote/Remote2RemoteTransferDialog.java:179-186,249-258`).
@@ -180,3 +180,6 @@ Paths below are relative to `ui/containers/session/pages/files/`.
 - [ ] **U13 — Leftovers**: empty first "Run in terminal" item overwritten later (`ssh/SshMenuHandler.java:154-157,169`);
   empty `openNewTab` branch for files (`:542-544`); external editor errors only printed (`:103-106,125-127,804-806`);
   `transfer/FileTransfer.java` entirely commented out; "TODO use guiHandle" throughout `SshFileOperations`.
+- [ ] **U14 — Copy/move between servers** (wanted): pasting or dropping files from another session's remote browser
+  into a remote browser is refused for now (O2); copy them through this computer (download to a temp folder, then
+  upload) or with a direct remote-to-remote pipe.

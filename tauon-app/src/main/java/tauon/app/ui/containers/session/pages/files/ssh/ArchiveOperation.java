@@ -3,6 +3,7 @@ package tauon.app.ui.containers.session.pages.files.ssh;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tauon.app.exceptions.OperationCancelledException;
+import tauon.app.util.misc.ShellUtils;
 import tauon.app.exceptions.RemoteOperationException;
 import tauon.app.exceptions.SessionClosedException;
 import tauon.app.ssh.IStopper;
@@ -24,28 +25,28 @@ public class ArchiveOperation {
 
     public ArchiveOperation() {
         extractCommands = new LinkedHashMap<>();
-        extractCommands.put(".tar", "cat \"%s\"|tar -C \"%s\" -xvf -");
+        extractCommands.put(".tar", "cat %s|tar -C %s -xvf -");
         extractCommands.put(".tar.gz",
-                "gunzip -c <\"%s\"|tar -C \"%s\" -xvf -");
-        extractCommands.put(".tgz", "gunzip -c <\"%s\"|tar -C \"%s\" -xvf -");
+                "gunzip -c <%s|tar -C %s -xvf -");
+        extractCommands.put(".tgz", "gunzip -c <%s|tar -C %s -xvf -");
         extractCommands.put(".tar.bz2",
-                "bzip2 -d -c <\"%s\"|tar -C \"%s\" -xvf -");
+                "bzip2 -d -c <%s|tar -C %s -xvf -");
         extractCommands.put(".tbz2",
-                "bzip2 -d -c <\"%s\"|tar -C \"%s\" -xvf -");
-        extractCommands.put(".tbz", "bzip2 -d -c <\"%s\"|tar -C \"%s\" -xvf -");
-        extractCommands.put(".tar.xz", "xz -d -c <\"%s\"|tar -C \"%s\" -xvf -");
-        extractCommands.put(".txz", "xz -d -c <\"%s\"|tar -C \"%s\" -xvf -");
-        extractCommands.put(".zip", "unzip -o \"%s\" -d \"%s\" ");
-        extractCommands.put(".gz", "gunzip -c < \"%s\" > \"%s\" ");
-        extractCommands.put(".xz", "xz -d -c < \"%s\" > \"%s\" ");
-        extractCommands.put(".bz2", "bzip2 -d -c  < \"%s\" > \"%s\" ");
+                "bzip2 -d -c <%s|tar -C %s -xvf -");
+        extractCommands.put(".tbz", "bzip2 -d -c <%s|tar -C %s -xvf -");
+        extractCommands.put(".tar.xz", "xz -d -c <%s|tar -C %s -xvf -");
+        extractCommands.put(".txz", "xz -d -c <%s|tar -C %s -xvf -");
+        extractCommands.put(".zip", "unzip -o %s -d %s ");
+        extractCommands.put(".gz", "gunzip -c < %s > %s ");
+        extractCommands.put(".xz", "xz -d -c < %s > %s ");
+        extractCommands.put(".bz2", "bzip2 -d -c  < %s > %s ");
 
         compressCommands = new LinkedHashMap<>();
-        compressCommands.put("tar", "tar cvf - %s|cat>\"%s\"");
-        compressCommands.put("tar.gz", "tar cvf - %s|gzip>\"%s\"");
-        compressCommands.put("tar.bz2", "tar cvf - %s|bzip2 -z>\"%s\"");
-        compressCommands.put("tar.xz", "tar cvf - %s|xz -z>\"%s\"");
-        compressCommands.put("zip", "zip -r - %s|cat>\"%s\"");
+        compressCommands.put("tar", "tar cvf - %s|cat>%s");
+        compressCommands.put("tar.gz", "tar cvf - %s|gzip>%s");
+        compressCommands.put("tar.bz2", "tar cvf - %s|bzip2 -z>%s");
+        compressCommands.put("tar.xz", "tar cvf - %s|xz -z>%s");
+        compressCommands.put("zip", "zip -r - %s|cat>%s");
     }
 
     public boolean isSupportedArchive(String fileName) {
@@ -97,12 +98,12 @@ public class ArchiveOperation {
             return false;
         }
         command = String
-                .format(command, archivePath,
-                        isSingleArchive(archivePath)
+                .format(command, ShellUtils.quote(archivePath),
+                        ShellUtils.quote(isSingleArchive(archivePath)
                                 ? PathUtils.combineUnix(targetFolder,
                                 getArchiveFileName(PathUtils
                                         .getFileName(archivePath)))
-                                : targetFolder);
+                                : targetFolder));
         
         LOG.debug("Invoke command: {}", command);
         
@@ -139,17 +140,18 @@ public class ArchiveOperation {
 
             StringBuilder sb = new StringBuilder();
             for (String s : files) {
-                sb.append(" \"").append(s).append("\"");
+                sb.append(' ').append(ShellUtils.quote(s));
             }
 
             String ext = comboBox.getSelectedItem() + "";
 
             String compressCmd = String.format(compressCommands.get(ext),
                     sb,
-                    PathUtils.combineUnix(txtTargetFolder.getText(),
-                            txtFileName.getText() + "." + ext));
+                    ShellUtils.quote(PathUtils.combineUnix(txtTargetFolder.getText(),
+                            txtFileName.getText() + "." + ext)));
             
-            String cd = String.format("cd \"%s\";", txtTargetFolder.getText());
+            // && : never archive relative names from the wrong folder
+            String cd = "cd " + ShellUtils.quote(txtTargetFolder.getText()) + " && ";
             
             LOG.debug("Invoke command: {}", cd + compressCmd);
             

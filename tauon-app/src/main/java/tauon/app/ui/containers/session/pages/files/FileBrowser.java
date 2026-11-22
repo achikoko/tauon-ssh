@@ -204,17 +204,20 @@ public class FileBrowser extends Page {
 
         try {
 
-            System.out.println("Dropped: " + transferData);
             AbstractFileBrowserView source = transferData.getSource();
             if (source == null) {
-                // Comes from local
-                System.out.println("Session hash code: " + source);
+                // Comes from the OS file manager: not handled yet
                 return true;
             }
+            if (source instanceof LocalFileBrowserView) {
+                // Local to local: not implemented yet, and must never go through SFTP
+                return false;
+            }
 
+            // Download through the session the files come from, which may not be this one
+            source.getFileBrowser().downloadInBackground(transferData.getFiles(), currentPath);
 //            if (source.getFileBrowser() == this) {
 //                if (SettingsConfigManager.getSettings().getFileTransferMode() == Constants.TransferMode.BACKGROUND) {
-                    downloadInBackground(transferData.getFiles(), currentPath);
 //                    return true;
 //                }
 //                FileSystem sourceFs = this.getSshFileSystem();

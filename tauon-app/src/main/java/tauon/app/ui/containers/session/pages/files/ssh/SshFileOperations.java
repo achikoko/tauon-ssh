@@ -15,6 +15,7 @@ import tauon.app.ssh.filesystem.FileSystem;
 import tauon.app.ssh.filesystem.FileType;
 import tauon.app.ui.components.misc.SkinnedTextField;
 import tauon.app.util.misc.PathUtils;
+import tauon.app.util.misc.ShellUtils;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -32,10 +33,9 @@ public class SshFileOperations {
 
     public static void deleteUsingRMRF(List<FileInfo> files, SSHConnectionHandler instance) throws RemoteOperationException, OperationCancelledException, SessionClosedException, InterruptedException {
 
-        StringBuilder sb = new StringBuilder("rm -rf ");
-
+        StringBuilder sb = new StringBuilder("rm -rf");
         for (FileInfo file : files) {
-            sb.append("\"").append(file.getPath()).append("\" ");
+            sb.append(' ').append(ShellUtils.quote(file.getPath()));
         }
         
         int ret;
@@ -71,26 +71,10 @@ public class SshFileOperations {
             }
         }
 
-        StringBuilder command = new StringBuilder();
-        for (FileInfo fileInfo : files) {
-            if (fileInfo.getType() == FileType.DIR_LINK
-                    || fileInfo.getType() == FileType.DIR) {
-                command.append("mv ");
-            } else {
-                command.append("mv -T ");
-            }
-            command.append("\"").append(fileInfo.getPath()).append("\" ");
-            if (dupList.contains(fileInfo) && action == 0) {
-                command.append("\"").append(PathUtils.combineUnix(targetFolder,
-                        getUniqueName(fileList, fileInfo.getName()))).append("\"; ");
-            } else {
-                command.append("\"").append(PathUtils.combineUnix(targetFolder,
-                        fileInfo.getName())).append("\"; ");
-            }
-        }
+        String command = transferScript(files, "mv", "mv -T", targetFolder, fileList, dupList, action == 0);
 
-        System.out.println("Move: " + command);
-        if (instance.exec(command.toString()) != 0) {
+        LOG.debug("Move: {}", command);
+        if (instance.exec(ShellUtils.sh(command)) != 0) {
             if (!SettingsConfigManager.getSettings().isUseSudo()) {
                 JOptionPane.showMessageDialog(null, getBundle().getString("general.message.access_denied"));
                 return false;
@@ -104,7 +88,7 @@ public class SshFileOperations {
                 return false;
             }
             SSHCommandRunner sshCommandRunner = new SSHCommandRunner()
-                    .withCommand(command.toString())
+                    .withCommand(command)
                     .withSudo(guiHandle);
             instance.exec(sshCommandRunner);
             int ret = sshCommandRunner.getResult();
@@ -155,26 +139,10 @@ public class SshFileOperations {
             }
         }
 
-        StringBuilder command = new StringBuilder();
-        for (FileInfo fileInfo : files) {
-            if (fileInfo.getType() == FileType.DIR_LINK
-                    || fileInfo.getType() == FileType.DIR) {
-                command.append("cp -rf ");
-            } else {
-                command.append("cp -Tf ");
-            }
-            command.append("\"").append(fileInfo.getPath()).append("\" ");
-            if (dupList.contains(fileInfo) && action == 0) {
-                command.append("\"").append(PathUtils.combineUnix(targetFolder,
-                        getUniqueName(fileList, fileInfo.getName()))).append("\"; ");
-            } else {
-                command.append("\"").append(PathUtils.combineUnix(targetFolder,
-                        fileInfo.getName())).append("\"; ");
-            }
-        }
+        String command = transferScript(files, "cp -rf", "cp -Tf", targetFolder, fileList, dupList, action == 0);
 
-        System.out.println("Copy: " + command);
-        if (instance.exec(command.toString()) != 0) {
+        LOG.debug("Copy: {}", command);
+        if (instance.exec(ShellUtils.sh(command)) != 0) {
             // TODO i18n
             if (!SettingsConfigManager.getSettings().isUseSudo()) {
                 JOptionPane.showMessageDialog(null, "Access denied");
@@ -191,7 +159,7 @@ public class SshFileOperations {
             }
             
             SSHCommandRunner sshCommandRunner = new SSHCommandRunner()
-                    .withCommand(command.toString())
+                    .withCommand(command)
                     .withSudo(guiHandle);
             instance.exec(sshCommandRunner);
             int ret = sshCommandRunner.getResult();
@@ -209,7 +177,31 @@ public class SshFileOperations {
         }
     }
 
-    private String getUniqueName(List<FileInfo> list, String name) {
+    /**
+     * One command per file, run with {@code sh -c}: it goes on after a failure and exits with the status of the last
+     * failed command (0 if all succeeded), so a partial failure is reported and sudo can be offered.
+     *
+     * @param dirCommand  command for folders and links to folders
+     * @param fileCommand command for the other files
+     * @param autoRename  give the files in {@code dupList} a unique name instead of overwriting
+     */
+    static String transferScript(List<FileInfo> files, String dirCommand, String fileCommand, String targetFolder,
+                                 List<FileInfo> targetList, List<FileInfo> dupList, boolean autoRename) {
+        StringBuilder script = new StringBuilder("rc=0; ");
+        for (FileInfo fileInfo : files) {
+            boolean dir = fileInfo.getType() == FileType.DIR_LINK || fileInfo.getType() == FileType.DIR;
+            String name = dupList.contains(fileInfo) && autoRename
+                    ? getUniqueName(targetList, fileInfo.getName())
+                    : fileInfo.getName();
+            script.append(dir ? dirCommand : fileCommand).append(' ')
+                    .append(ShellUtils.quote(fileInfo.getPath())).append(' ')
+                    .append(ShellUtils.quote(PathUtils.combineUnix(targetFolder, name)))
+                    .append(" || rc=$?; ");
+        }
+        return script.append("exit $rc").toString();
+    }
+
+    private static String getUniqueName(List<FileInfo> list, String name) {
         while (true) {
             boolean found = false;
             for (FileInfo f : list) {
@@ -253,7 +245,7 @@ public class SshFileOperations {
     private boolean renameWithPrivilege(String oldName, String newName,
                                         GuiHandle guiHandle, SSHConnectionHandler instance) throws RemoteOperationException, OperationCancelledException, SessionClosedException, InterruptedException {
         StringBuilder command = new StringBuilder();
-        command.append("mv \"").append(oldName).append("\" \"").append(newName).append("\"");
+        command.append("mv ").append(ShellUtils.quote(oldName)).append(' ').append(ShellUtils.quote(newName));
         System.out.println("Invoke sudo: " + command);
         
         SSHCommandRunner sshCommandRunner = new SSHCommandRunner()
@@ -302,9 +294,9 @@ public class SshFileOperations {
     }
 
     private boolean deletePrivilege(FileInfo[] targetList, GuiHandle guiHandle, SSHConnectionHandler instance) throws RemoteOperationException, OperationCancelledException, SessionClosedException, InterruptedException {
-        StringBuilder sb = new StringBuilder("rm -rf ");
+        StringBuilder sb = new StringBuilder("rm -rf");
         for (FileInfo file : targetList) {
-            sb.append("\"").append(file.getPath()).append("\" ");
+            sb.append(' ').append(ShellUtils.quote(file.getPath()));
         }
 
         System.out.println("Invoke sudo: " + sb);
@@ -377,7 +369,7 @@ public class SshFileOperations {
     private boolean touchWithPrivilege(String path, String newFile, GuiHandle guiHandle, SSHConnectionHandler instance) throws RemoteOperationException, OperationCancelledException, SessionClosedException, InterruptedException {
         String file = PathUtils.combineUnix(path, newFile);
         StringBuilder command = new StringBuilder();
-        command.append("touch \"").append(file).append("\"");
+        command.append("touch ").append(ShellUtils.quote(file));
         System.out.println("Invoke sudo: " + command);
         SSHCommandRunner sshCommandRunner = new SSHCommandRunner()
                 .withCommand(command.toString())
@@ -450,7 +442,7 @@ public class SshFileOperations {
     private boolean mkdirWithPrivilege(String path, String newFolder, GuiHandle guiHandle, SSHConnectionHandler instance) throws RemoteOperationException, OperationCancelledException, SessionClosedException, InterruptedException {
         String file = PathUtils.combineUnix(path, newFolder);
         StringBuilder command = new StringBuilder();
-        command.append("mkdir \"").append(file).append("\"");
+        command.append("mkdir ").append(ShellUtils.quote(file));
         System.out.println("Invoke sudo: " + command);
         
         SSHCommandRunner sshCommandRunner = new SSHCommandRunner()

@@ -11,11 +11,11 @@ import tauon.app.services.LanguageService;
 import tauon.app.services.SettingsConfigManager;
 import tauon.app.ssh.filesystem.FileInfo;
 import tauon.app.ssh.filesystem.FileSystem;
-import tauon.app.ssh.filesystem.LocalFileSystem;
 import tauon.app.ssh.filesystem.SshFileSystem;
 import tauon.app.ui.containers.session.SessionContentPanel;
 import tauon.app.ui.containers.session.pages.files.AbstractFileBrowserView;
 import tauon.app.ui.containers.session.pages.files.FileBrowser;
+import tauon.app.ui.containers.session.pages.files.local.LocalFileBrowserView;
 import tauon.app.ui.containers.session.pages.files.transfer.DndTransferData;
 import tauon.app.ui.containers.session.pages.files.transfer.DndTransferHandler;
 import tauon.app.ui.containers.session.pages.files.view.addressbar.AddressBar;
@@ -175,29 +175,23 @@ public class SshFileBrowserView extends AbstractFileBrowserView {
     }
 
     public boolean handleDrop(DndTransferData transferData) {
+        AbstractFileBrowserView source = transferData.getSource();
+        boolean fromLocal = source == null || source instanceof LocalFileBrowserView;
+        if (!fromLocal && !isSameServer(source)) {
+            // The move/copy would run here, on files of another server: not supported yet
+            JOptionPane.showMessageDialog(this, getBundle().getString("app.files.message.copy_between_servers_unsupported"));
+            return false;
+        }
         if (SettingsConfigManager.getSettings().isConfirmBeforeMoveOrCopy()
                 && JOptionPane.showConfirmDialog(null, "Move/copy files?") != JOptionPane.YES_OPTION) {
             return false;
         }
         try {
-            AbstractFileBrowserView source = transferData.getSource();
-            
-            FileSystem sourceFs;
-            if (source == null || source.getFileSystem().isLocal()) {
-                System.out.println("Source fs is local");
-                sourceFs = LocalFileSystem.getInstance();
-            } else {
-                System.out.println("Source fs is remote");
-                sourceFs = this.fileBrowser.getSshFileSystem();
-            }
-
-            if (sourceFs instanceof LocalFileSystem) {
-                System.out.println("Dropped: " + transferData);
+            if (fromLocal) {
                 this.fileBrowser.uploadInBackground(transferData.getFiles(), this.path);
                 return true;
-            } else if (sourceFs == this.fileBrowser.getSshFileSystem()) {
-                // TODO implement this
-                System.out.println("SshFs is of same instance: " + (sourceFs == this.fileBrowser.getSshFileSystem()));
+            } else {
+                // Same server (checked above): move/copy with this session
                 if (transferData.getFiles().length > 0) {
                     FileInfo fileInfo = transferData.getFiles()[0];
                     String parent = PathUtils.getParent(fileInfo.getPath());
@@ -232,6 +226,18 @@ public class SshFileBrowserView extends AbstractFileBrowserView {
         }
     }
     
+    /**
+     * @return whether {@code source} browses the same server as this view: same session, or another session of the
+     * same saved site (same host and user)
+     */
+    private boolean isSameServer(AbstractFileBrowserView source) {
+        if (source.getFileBrowser() == this.fileBrowser) {
+            return true;
+        }
+        String siteId = this.fileBrowser.getInfo().getId();
+        return siteId != null && siteId.equals(source.getFileBrowser().getInfo().getId());
+    }
+
     @Override
     public String getTitlePrefix() {
         return getBundle().getString("app.files.tabs.remote.title_prefix");

@@ -3,6 +3,7 @@ package tauon.app.ui.containers.session.pages.files.ssh;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tauon.app.App;
+import tauon.app.util.misc.ShellUtils;
 import tauon.app.ssh.IStopper;
 import tauon.app.ssh.SSHCommandRunner;
 import tauon.app.ssh.filesystem.FileInfo;
@@ -397,7 +398,7 @@ public class PropertiesDialog extends JDialog {
         StringBuilder command = new StringBuilder();
         command.append("export POSIXLY_CORRECT=1; export BLOCKSIZE=512; du -s ");
         for (FileInfo fileInfo : files) {
-            command.append("\"").append(fileInfo.getPath()).append("\" ");
+            command.append(ShellUtils.quote(fileInfo.getPath())).append(' ');
         }
         System.out.println("Command to execute: " + command);
         fileBrowser.getHolder().submitSSHOperationStoppable((guiHandle, instance) -> {
@@ -441,8 +442,8 @@ public class PropertiesDialog extends JDialog {
     public void calcFreeSpace(FileInfo[] files, BiConsumer<String, Boolean> biConsumer, IStopper.Handle stopFlag) {
         StringBuilder command = new StringBuilder();
         command.append(
-                "export POSIXLY_CORRECT=1; export BLOCKSIZE=1024; df -P -k \""
-                        + files[0].getPath() + "\"");
+                "export POSIXLY_CORRECT=1; export BLOCKSIZE=1024; df -P -k "
+                        + ShellUtils.quote(files[0].getPath()));
         System.out.println("Command to execute: " + command);
         fileBrowser.getHolder().submitSSHOperationStoppable((guiHandle, instance) -> {
             try {

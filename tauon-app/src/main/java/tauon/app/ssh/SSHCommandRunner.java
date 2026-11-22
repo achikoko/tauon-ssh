@@ -1,5 +1,7 @@
 package tauon.app.ssh;
 
+import tauon.app.util.misc.ShellUtils;
+
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
@@ -146,7 +148,9 @@ public class SSHCommandRunner {
                 // Sudo NOT needs to allocate a pty, this action provokes the stderr to be mixed with stdout,
                 // By setting -S option, the password sending works fine
 //                session.allocatePTY("vt100", 80, 24, 0, 0, Collections.emptyMap());
-                fullCommandStringBuilder.append("sudo -S").append(envVars != null ? " -E" : "").append(" -p '").append(prompt).append("' ").append(command);
+                // sh -c: every command of a chained command line ("a; b", "a && b", pipes) runs as root, not just the first
+                fullCommandStringBuilder.append("sudo -S").append(envVars != null ? " -E" : "").append(" -p '").append(prompt).append("' ")
+                        .append(ShellUtils.sh(command));
             }else{
                 fullCommandStringBuilder.append(command);
             }

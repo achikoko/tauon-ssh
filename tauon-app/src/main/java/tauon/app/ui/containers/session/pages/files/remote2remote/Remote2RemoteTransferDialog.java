@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import tauon.app.App;
+import tauon.app.util.misc.ShellUtils;
 import tauon.app.exceptions.OperationCancelledException;
 import tauon.app.ssh.filesystem.FileInfo;
 import tauon.app.ssh.filesystem.FileType;
@@ -223,22 +224,39 @@ public class Remote2RemoteTransferDialog extends JDialog {
         return null;
     }
 
+    /**
+     * Quotes an argument of an sftp batch command: double quotes, with {@code \\} and {@code "} escaped, and glob
+     * characters escaped since {@code put} expands them.
+     */
+    static String sftpQuote(String value) {
+        StringBuilder sb = new StringBuilder("\"");
+        for (char c : value.toCharArray()) {
+            if (c == '\\' || c == '"' || c == '*' || c == '?' || c == '[' || c == ']') {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.append('"').toString();
+    }
+
     private String generateCommand(RemoteServerEntry e) {
         return createSftpFileList(e);
     }
 
     private String createSftpFileList(RemoteServerEntry e) {
         StringBuilder sb = new StringBuilder();
-        sb.append("sftp " + e.getUser() + "@" + e.getHost() + "<<EOF\n");
-        sb.append("lcd \"" + this.currentDirectory + "\"\n");
-        sb.append("cd \"" + e.getPath() + "\"\n");
+        // Quoted delimiter: the shell expands nothing in the batch; sftp parses its own quoting
+        sb.append("sftp -P ").append(e.getPort()).append(' ')
+                .append(ShellUtils.quote(e.getUser() + "@" + e.getHost())).append(" <<'EOF'\n");
+        sb.append("lcd ").append(sftpQuote(this.currentDirectory)).append('\n');
+        sb.append("cd ").append(sftpQuote(e.getPath())).append('\n');
 
         for (FileInfo finfo : selectedFiles) {
             if (finfo.getType() == FileType.DIR) {
-                sb.append("mkdir \"" + finfo.getName() + "\"\n");
-                sb.append("put -r \"" + finfo.getName() + "\"\n");
+                sb.append("mkdir ").append(sftpQuote(finfo.getName())).append('\n');
+                sb.append("put -r ").append(sftpQuote(finfo.getName())).append('\n');
             } else if (finfo.getType() == FileType.FILE) {
-                sb.append("put -P \"" + finfo.getName() + "\"\n");
+                sb.append("put -P ").append(sftpQuote(finfo.getName())).append('\n');
             }
         }
         sb.append("bye\n");

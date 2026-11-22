@@ -3,6 +3,7 @@ package tauon.app.ui.containers.session.pages.files.ssh;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tauon.app.App;
+import tauon.app.util.misc.ShellUtils;
 import tauon.app.exceptions.LocalOperationException;
 import tauon.app.exceptions.RemoteOperationException;
 import tauon.app.services.BookmarkConfigManager;
@@ -707,11 +708,11 @@ public class SshMenuHandler {
     }
 
     private void openFolderInTerminal(String folder) {
-        fileBrowser.getHolder().openTerminal("cd \"" + folder + "\"");
+        fileBrowser.getHolder().openTerminal("cd " + ShellUtils.quote(folder));
     }
 
     private void openRunInTerminal(String folder, String file) {
-        fileBrowser.getHolder().openTerminal("cd \"" + folder + "\"; \"" + file + "\"");
+        fileBrowser.getHolder().openTerminal("cd " + ShellUtils.quote(folder) + " && " + ShellUtils.quote(file));
     }
 
     private void openRunInBackground(String folder, String file) {
@@ -720,7 +721,7 @@ public class SshMenuHandler {
             String cmd;
             
             SSHCommandRunner sshCommandRunner = new SSHCommandRunner()
-                    .withCommand(cmd = "cd \"" + folder + "\"; nohup \"" + file + "\" &");
+                    .withCommand(cmd = "cd " + ShellUtils.quote(folder) + " && nohup " + ShellUtils.quote(file) + " &");
             instance.exec(sshCommandRunner);
             int ret = sshCommandRunner.getResult();
             

@@ -22,6 +22,12 @@ changed or the bug that was fixed.
 
 ### Fixed
 
+- File browser: file names are quoted for the remote shell (`ShellUtils.quote`) in delete, move, copy, rename, new file/folder, archive, properties, terminal and remote-to-remote commands; names with `"`, `$`, backticks or `'` no longer run commands or hit other files.
+- Sudo runs the whole command line as root (`sudo sh -c '…'` in `SSHCommandRunner`); a multi-file move/copy ran only its first command with sudo.
+- Multi-file move/copy reports a failure of any file, not only of the last one (`SshFileOperations.transferScript`).
+- Pasting or dropping files from another server's session into a remote browser is refused instead of running the move/copy on this server's files with the same paths.
+- Dropping remote files onto a local browser downloads them through the session they come from; a local-to-local drag no longer starts an SFTP download.
+- Remote-to-remote transfer uses the saved port (`sftp -P`).
 - File browser history: Up and Home no longer record the current folder twice, Back after opening a folder returns to the folder left, Forward is cleared by a new navigation, and Enter/bookmarks are recorded (`AbstractFileBrowserView.navigate`, `NavigationHistory`).
 - File browser: Up at the remote root `/` no longer jumps to the home folder; Up at any root does nothing.
 - File browser: path, address bar and history only change once the folder has been listed; a failed listing leaves them as they were, and a missing local folder is reported instead of shown as empty.
