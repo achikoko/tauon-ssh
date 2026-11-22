@@ -54,9 +54,17 @@ public class PathUtils {
         if (path1 == null && path2 == null) {
             return true;
         }
-        if (path1 == null) {
+        if (path1 == null || path2 == null) {
             return false;
         }
-        return (path1.equals(path2) || (path1 + "/").equals(path2) || (path1 + "\\").equals(path2));
+        return stripTrailingSeparator(path1).equals(stripTrailingSeparator(path2));
+    }
+
+    /** Removes one trailing separator, except from a root ({@code /}, {@code C:\}). */
+    private static String stripTrailingSeparator(String path) {
+        if (path.length() > 1 && (path.endsWith("/") || path.endsWith("\\")) && !path.endsWith(":\\")) {
+            return path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 }

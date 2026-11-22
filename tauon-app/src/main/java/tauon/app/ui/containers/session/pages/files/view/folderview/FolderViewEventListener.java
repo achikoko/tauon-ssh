@@ -5,7 +5,10 @@ import tauon.app.ssh.filesystem.FileInfo;
 import javax.swing.*;
 
 public interface FolderViewEventListener {
-    void addBack(String path);
+    /** User navigation to {@code path} (recorded in the history); {@code null} for the home folder. */
+    void navigate(String path);
+
+    /** Shows {@code path} without recording it in the history. */
 
     void render(String path);
 

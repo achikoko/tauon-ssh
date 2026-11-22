@@ -2,6 +2,7 @@ package tauon.app.ui.containers.session.pages.files.local;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tauon.app.exceptions.LocalOperationException;
 import tauon.app.services.SettingsConfigManager;
 import tauon.app.ssh.filesystem.FileInfo;
 import tauon.app.ssh.filesystem.FileSystem;
@@ -18,8 +19,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
-import java.util.List;
 
 import static tauon.app.services.LanguageService.getBundle;
 
@@ -29,7 +30,7 @@ public class LocalFileBrowserView extends AbstractFileBrowserView {
     private final LocalMenuHandler menuHandler;
     private final DndTransferHandler transferHandler;
     private final JPopupMenu addressPopup;
-    private LocalFileSystem fs;
+    private final LocalFileSystem fs = LocalFileSystem.getInstance();
 
     public LocalFileBrowserView(FileBrowser fileBrowser, String initialPath) {
         super(fileBrowser);
@@ -40,33 +41,26 @@ public class LocalFileBrowserView extends AbstractFileBrowserView {
         this.folderView.setFolderViewTransferHandler(transferHandler);
         this.addressPopup = menuHandler.createAddressPopup();
 
+        String startPath = null;
         if (this.fileBrowser.getInfo().getLocalFolder() != null && this.fileBrowser.getInfo().getLocalFolder().trim().length() > 1) {
-            this.path = fileBrowser.getInfo().getLocalFolder();
+            startPath = fileBrowser.getInfo().getLocalFolder();
         } else if (initialPath != null) {
-            this.path = initialPath;
+            startPath = initialPath;
         }
+        // A start folder that is gone falls back to the home folder (null) instead of an error
+        if (startPath != null && !isDirectory(startPath)) {
+            LOG.warn("Local folder {} doesn't exist, opening the home folder.", startPath);
+            startPath = null;
+        }
+        render(startPath);
+    }
 
-        System.out.println("Path: " + path);
-        fileBrowser.getHolder().executor.submit(() -> {
-            try {
-                this.fs = LocalFileSystem.getInstance();
-                //Validate if local path exists, if not set the home path
-                if (this.path == null || Files.notExists(Paths.get(this.path)) || !Files.isDirectory(Paths.get(this.path))) {
-                    System.err.println("The file path doesn't exists " + this.path);
-                    System.out.println("Setting to " + fs.getHome());
-
-                    path = fs.getHome();
-                }
-                List<FileInfo> list = fs.list(path);
-                SwingUtilities.invokeLater(() -> {
-                    addressBar.setText(path);
-                    folderView.setItems(list);
-                    setTabTitle(path);
-                });
-            } catch (Exception e) {
-                LOG.debug("Exception while listing local files.", e);
-            }
-        });
+    private static boolean isDirectory(String path) {
+        try {
+            return Files.isDirectory(Paths.get(path));
+        } catch (InvalidPathException e) {
+            return false;
+        }
     }
     
     @Override
@@ -106,27 +100,31 @@ public class LocalFileBrowserView extends AbstractFileBrowserView {
     }
 
     @Override
-    public void render(String path, boolean useCache) {
-        this.render(path);
+    protected void listFolder(String target, boolean useCache, ListingCallback done, Runnable failed) {
+        fileBrowser.getHolder().submitLocalOperation(() -> {
+            boolean listed = false;
+            try {
+                String folder = target == null ? fs.getHome() : target;
+                File file = new File(folder);
+                if (!file.exists()) {
+                    throw new LocalOperationException.FileNotFound(folder);
+                }
+                if (!file.isDirectory()) {
+                    throw new LocalOperationException.NotAFolder(file);
+                }
+                done.listed(folder, fs.list(folder));
+                listed = true;
+            } finally {
+                if (!listed) {
+                    failed.run();
+                }
+            }
+        });
     }
 
     @Override
-    public void render(String path) {
-        this.path = path;
-        fileBrowser.getHolder().submitLocalOperation(() -> {
-            if (this.path == null) {
-                this.path = fs.getHome();
-            }
-            List<FileInfo> list = fs.list(this.path);
-            SwingUtilities.invokeLater(() -> {
-                addressBar.setText(this.path);
-                folderView.setItems(list);
-                int tc = list.size();
-                String text = String.format("Total %d remote file(s)", tc);
-                fileBrowser.updateRemoteStatus(text);
-                setTabTitle(this.path);
-            });
-        });
+    protected String getParentPath(String path) {
+        return new File(path).getParent();
     }
 
     @Override
@@ -137,19 +135,6 @@ public class LocalFileBrowserView extends AbstractFileBrowserView {
     public boolean createMenu(JPopupMenu popup, FileInfo[] files) {
         menuHandler.createMenu(popup, files);
         return true;
-    }
-
-    protected void up() {
-        String s = new File(path).getParent();
-        if (s != null) {
-            addBack(path);
-            render(s);
-        }
-    }
-
-    protected void home() {
-        addBack(path);
-        render(null);
     }
 
     @Override

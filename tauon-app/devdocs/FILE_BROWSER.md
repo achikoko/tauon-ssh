@@ -12,34 +12,36 @@ Severity: **high** = data loss, crash, or a main action is broken; **medium** = 
 ### Navigation and history
 
 The history is a pair of stacks (`NavigationHistory`); every navigation must push the *current* folder onto
-"back" exactly once, clear "forward", and only after the new folder is listed. None of the call sites agree on it.
+"back" exactly once, clear "forward", and only after the new folder is listed. None of the call sites agreed on it.
+Fixed: every navigation goes through `AbstractFileBrowserView.navigate` (or Back/Forward), which updates `path`,
+the address bar and `NavigationHistory` on the EDT only after the folder was listed (`NavigationHistoryTest`).
 
-- [ ] **N1 — high — Up and Home push the current folder twice.** `AbstractFileBrowserView` `upAction` (line 73)
+- [x] **N1 — high — Up and Home push the current folder twice.** `AbstractFileBrowserView` `upAction` (line 73)
   and `btnHome` (line 109) call `addBack(path)`, and then `up()`/`home()` of both views call `addBack(path)` again
   (`LocalFileBrowserView.java:145,151`, `SshFileBrowserView.java:173,179`). After Up, the first Back "does nothing"
   (it goes to the folder already shown) and a second Back is needed.
-- [ ] **N2 — high — Opening a folder pushes the destination, not the current folder.** Double-click in the table
+- [x] **N2 — high — Opening a folder pushes the destination, not the current folder.** Double-click in the table
   and in the list view calls `listener.addBack(fileInfo.getPath())` (`FolderView.java:255,306`). Back after
   entering a folder stays in that folder, and the folder you came from is never in the history.
-- [ ] **N3 — high — Up at `/` on a remote browser jumps to the home folder.** `PathUtils.getParent("/")` returns
+- [x] **N3 — high — Up at `/` on a remote browser jumps to the home folder.** `PathUtils.getParent("/")` returns
   `null` (`PathUtils.java:41`) and `SshFileBrowserView.render(null)` means "home" (`SshFileBrowserView.java:138`).
-- [ ] **N4 — medium — Up at the root adds a history entry anyway.** `upAction` pushes before `up()` checks there is
+- [x] **N4 — medium — Up at the root adds a history entry anyway.** `upAction` pushes before `up()` checks there is
   a parent; locally `new File("/").getParent()` is `null`, so nothing is rendered but Back is enabled with the same
   folder.
-- [ ] **N5 — medium — Forward history is never cleared.** No navigation (address bar, Up, Home, double-click,
+- [x] **N5 — medium — Forward history is never cleared.** No navigation (address bar, Up, Home, double-click,
   bookmark) clears the forward stack, so Forward goes to unrelated folders after a new navigation.
-- [ ] **N6 — medium — Some navigations are not recorded at all.** Enter on a folder (`FolderView.java:217`) and
+- [x] **N6 — medium — Some navigations are not recorded at all.** Enter on a folder (`FolderView.java:217`) and
   choosing a bookmark (`OverflowMenuHandler.java:69`) call `render` without `addBack`.
-- [ ] **N7 — medium — History and `path` change before the folder is listed.** `addBack` happens before `render`,
+- [x] **N7 — medium — History and `path` change before the folder is listed.** `addBack` happens before `render`,
   and `render` sets `this.path` immediately (`LocalFileBrowserView.java:115`, `SshFileBrowserView.java:134`);
   if listing fails, `path`, the address bar and the history disagree. Locally a failed listing is not even
   reported (see L2).
-- [ ] **N8 — low — `path` is written from the background thread.** `SshFileBrowserView.render(null)` sets
+- [x] **N8 — low — `path` is written from the background thread.** `SshFileBrowserView.render(null)` sets
   `this.path = sshfs.getHome()` in the SSH worker (lines 139, 145) while the EDT reads it for `addBack`; clicking a
   navigation button before home is resolved pushes `null` into the history (Back to `null` then goes home).
-- [ ] **N9 — low — `addNext(String path)` ignores its argument** and pushes `this.path`
+- [x] **N9 — low — `addNext(String path)` ignores its argument** and pushes `this.path`
   (`AbstractFileBrowserView.java:234`). Same result today, but misleading.
-- [ ] **N10 — low — `PathUtils.isSamePath` is asymmetric**: `("/a", "/a/")` is the same path, `("/a/", "/a")` is
+- [x] **N10 — low — `PathUtils.isSamePath` is asymmetric**: `("/a", "/a/")` is the same path, `("/a/", "/a")` is
   not (`PathUtils.java:60`). The address bar uses it to skip re-navigating to the current folder.
 
 ### Address bar
@@ -57,9 +59,9 @@ The history is a pair of stacks (`NavigationHistory`); every navigation must pus
 - [ ] **L1 — high — Sorting a local folder by Owner throws `NullPointerException`.** Local `FileInfo`s are created
   with an empty `extra` (`LocalFileSystem.java:67`), so `FileInfo.user` stays `null` (`FileInfo.java:41`) and the
   owner comparator calls `s1.compareTo(s2)` on it (`FolderView.java:200`).
-- [ ] **L2 — medium — A missing or unreadable local folder shows as empty, with no error.** `LocalFileSystem.list`
-  returns an empty list when `listFiles()` returns `null` (line 85); typing a wrong path in the local address bar
-  shows an empty folder under that path.
+- [ ] **L2 — medium — An unreadable local folder shows as empty, with no error.** `LocalFileSystem.list`
+  returns an empty list when `listFiles()` returns `null` (line 85). A missing path or a file is now reported by
+  `LocalFileBrowserView.listFolder`; a folder without read permission still lists as empty.
 - [ ] **L3 — high — List (icon) view acts on the wrong selection.** `FolderView.getSelectedFiles()` reads the
   *table* selection (line 363) even when the list view is shown; the list's context menu calls `selectRow(e)`
   (the table method, with list coordinates, line 313). Menu actions in list view use a stale/empty selection.
@@ -72,7 +74,7 @@ The history is a pair of stacks (`NavigationHistory`); every navigation must pus
   does the opposite. Only the first local tab should start in the site's folder.
 - [ ] **L6 — low — The list view ignores the sort order** (the `JList` uses the model directly, the sorter only
   applies to the table).
-- [ ] **L7 — low — Local status text says "remote file(s)"** (`LocalFileBrowserView.java:125`); it is never shown
+- [x] **L7 — low — Local status text says "remote file(s)"** (`LocalFileBrowserView.java:125`); it is never shown
   anyway (see U1).
 
 ### Drag and drop

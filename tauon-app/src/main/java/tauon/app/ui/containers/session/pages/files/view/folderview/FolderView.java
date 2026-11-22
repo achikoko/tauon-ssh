@@ -213,8 +213,7 @@ public class FolderView extends JPanel {
                 FileInfo[] files = getSelectedFiles();
                 if (files.length > 0) {
                     if (files[0].getType() == FileType.DIR || files[0].getType() == FileType.DIR_LINK) {
-                        String str = files[0].getPath();
-                        listener.render(str, SettingsConfigManager.getSettings().isDirectoryCache());
+                        listener.navigate(files[0].getPath());
                     }
                 }
             }
@@ -252,8 +251,7 @@ public class FolderView extends JPanel {
                     if (r == table.getSelectedRow()) {
                         FileInfo fileInfo = folderViewModel.getItemAt(getRow(r));
                         if (fileInfo.getType() == FileType.DIR || fileInfo.getType() == FileType.DIR_LINK) {
-                            listener.addBack(fileInfo.getPath());
-                            listener.render(fileInfo.getPath(), SettingsConfigManager.getSettings().isDirectoryCache());
+                            listener.navigate(fileInfo.getPath());
                         } else {
                             listener.openApp(fileInfo);
                         }
@@ -303,8 +301,7 @@ public class FolderView extends JPanel {
                     if (r == x) {
                         FileInfo fileInfo = folderViewModel.getItemAt(r);
                         if (fileInfo.getType() == FileType.DIR || fileInfo.getType() == FileType.DIR_LINK) {
-                            listener.addBack(fileInfo.getPath());
-                            listener.render(fileInfo.getPath(), SettingsConfigManager.getSettings().isDirectoryCache());
+                            listener.navigate(fileInfo.getPath());
                         } else {
                             listener.openApp(fileInfo);
                         }

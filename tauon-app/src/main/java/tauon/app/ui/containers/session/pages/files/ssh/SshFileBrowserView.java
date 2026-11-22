@@ -48,17 +48,15 @@ public class SshFileBrowserView extends AbstractFileBrowserView {
         this.folderView.setTransferHandler(transferHandler);
         this.folderView.setFolderViewTransferHandler(transferHandler);
         this.addressPopup = menuHandler.createAddressPopup();
-        if (initialPath == null) {
-            this.path = this.fileBrowser.getInfo().getRemoteFolder();
-            if (this.path != null && this.path.trim().isEmpty()) {
-                this.path = null;
+        String startPath = initialPath;
+        if (startPath == null) {
+            startPath = this.fileBrowser.getInfo().getRemoteFolder();
+            if (startPath != null && startPath.trim().isEmpty()) {
+                startPath = null;
             }
-            System.out.println("Path: " + path);
-        } else {
-            this.path = initialPath;
         }
 
-        this.render(path, SettingsConfigManager.getSettings().isDirectoryCache());
+        this.render(startPath, SettingsConfigManager.getSettings().isDirectoryCache());
     }
 
     private void openDefaultAction() {
@@ -103,7 +101,7 @@ public class SshFileBrowserView extends AbstractFileBrowserView {
         return path;
     }
 
-    private void renderDirectory(SshFileSystem sshFileSystem, final String path, final boolean fromCache) throws TauonOperationException, OperationCancelledException, InterruptedException, SessionClosedException {
+    private List<FileInfo> listDirectory(SshFileSystem sshFileSystem, final String path, final boolean fromCache) throws TauonOperationException, OperationCancelledException, InterruptedException, SessionClosedException {
         List<FileInfo> list = null;
         if (fromCache) {
             list = this.fileBrowser.getSSHDirectoryCache().get(trimPath(path));
@@ -114,43 +112,39 @@ public class SshFileBrowserView extends AbstractFileBrowserView {
                 this.fileBrowser.getSSHDirectoryCache().put(trimPath(path), list);
             }
         }
-        if (list != null) {
-            final List<FileInfo> list2 = list;
-            System.out.println("New file list: " + list2);
-            SwingUtilities.invokeLater(() -> {
-                addressBar.setText(path);
-                folderView.setItems(list2);
-                setTabTitle(path);
-                int tc = list2.size();
-                String text = String.format("Total %d remote file(s)", tc);
-                fileBrowser.updateRemoteStatus(text);
-            });
-        }
+        return list;
     }
 
     @Override
-    public void render(String path, boolean useCache) {
-        System.out.println("Rendering: " + path + " caching: " + useCache);
-        this.path = path;
-        
+    protected void listFolder(String target, boolean useCache, ListingCallback done, Runnable failed) {
         fileBrowser.getHolder().submitSSHOperation((guiHandle, instance) -> {
-            SshFileSystem sshfs = this.fileBrowser.getSshFileSystem();
-            if (path == null) {
-                this.path = sshfs.getHome();
-            }
+            boolean listed = false;
             try {
-                renderDirectory(sshfs, this.path, useCache);
-            } catch (RemoteOperationException.FileNotFound e) {
-                AlertDialogUtils.showInfo(this, LanguageService.getBundle().getString("app.files.message.failed_going_rendering_home"));
-                this.path = sshfs.getHome();
-                renderDirectory(sshfs, this.path, useCache);
+                SshFileSystem sshfs = this.fileBrowser.getSshFileSystem();
+                String folder = target == null ? sshfs.getHome() : target;
+                List<FileInfo> list;
+                try {
+                    list = listDirectory(sshfs, folder, useCache);
+                } catch (RemoteOperationException.FileNotFound e) {
+                    AlertDialogUtils.showInfo(this, LanguageService.getBundle().getString("app.files.message.failed_going_rendering_home"));
+                    folder = sshfs.getHome();
+                    list = listDirectory(sshfs, folder, useCache);
+                }
+                if (list != null) {
+                    done.listed(folder, list);
+                    listed = true;
+                }
+            } finally {
+                if (!listed) {
+                    failed.run();
+                }
             }
         });
     }
 
     @Override
-    public void render(String path) {
-        this.render(path, false);
+    protected String getParentPath(String path) {
+        return PathUtils.getParent(path); // null for "/"
     }
 
     @Override
@@ -165,19 +159,6 @@ public class SshFileBrowserView extends AbstractFileBrowserView {
             e1.printStackTrace();
         }
         
-    }
-
-    protected void up() {
-        if (path != null) {
-            String parent = PathUtils.getParent(path);
-            addBack(path);
-            render(parent, SettingsConfigManager.getSettings().isDirectoryCache());
-        }
-    }
-
-    protected void home() {
-        addBack(path);
-        render(null, SettingsConfigManager.getSettings().isDirectoryCache());
     }
 
     @Override

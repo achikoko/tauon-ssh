@@ -22,6 +22,10 @@ changed or the bug that was fixed.
 
 ### Fixed
 
+- File browser history: Up and Home no longer record the current folder twice, Back after opening a folder returns to the folder left, Forward is cleared by a new navigation, and Enter/bookmarks are recorded (`AbstractFileBrowserView.navigate`, `NavigationHistory`).
+- File browser: Up at the remote root `/` no longer jumps to the home folder; Up at any root does nothing.
+- File browser: path, address bar and history only change once the folder has been listed; a failed listing leaves them as they were, and a missing local folder is reported instead of shown as empty.
+- `PathUtils.isSamePath` ignores a trailing separator on either side.
 - Jump host passwords load into their own jump host; they were all loaded into the first one, so the others were lost on the next save (`SitesConfigManager.populatePasswordsInto`).
 - Proxy password is stored encrypted in `passwords.pfx` instead of plain text in the sessions file (`PasswordEntry.proxyPassword`); existing plain text values are moved there on startup.
 - Update checker compares versions number by number (`VersionEntry.compareTo`); `4.0.10` and `4.1.0` no longer collide and suffixed tags like `v3.3.0-r1` no longer break it.

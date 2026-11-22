@@ -66,7 +66,7 @@ public class OverflowMenuHandler {
             item.setName(path);
             this.favouriteLocations.add(item);
             item.addActionListener(e -> {
-                fileBrowserView.render(item.getName());
+                fileBrowserView.navigate(item.getName());
             });
         }
     }
