@@ -41,11 +41,11 @@ public class LocalFileBrowserView extends AbstractFileBrowserView {
         this.folderView.setFolderViewTransferHandler(transferHandler);
         this.addressPopup = menuHandler.createAddressPopup();
 
-        String startPath = null;
-        if (this.fileBrowser.getInfo().getLocalFolder() != null && this.fileBrowser.getInfo().getLocalFolder().trim().length() > 1) {
+        // An explicit folder ("Open in new tab") wins; otherwise the site's local folder, then home
+        String startPath = initialPath;
+        if (startPath == null && this.fileBrowser.getInfo().getLocalFolder() != null
+                && this.fileBrowser.getInfo().getLocalFolder().trim().length() > 1) {
             startPath = fileBrowser.getInfo().getLocalFolder();
-        } else if (initialPath != null) {
-            startPath = initialPath;
         }
         // A start folder that is gone falls back to the home folder (null) instead of an error
         if (startPath != null && !isDirectory(startPath)) {
@@ -111,6 +111,10 @@ public class LocalFileBrowserView extends AbstractFileBrowserView {
                 }
                 if (!file.isDirectory()) {
                     throw new LocalOperationException.NotAFolder(file);
+                }
+                if (!file.canRead()) {
+                    // listFiles() would return null and the folder would look empty
+                    throw new LocalOperationException.AccessDenied(folder);
                 }
                 done.listed(folder, fs.list(folder));
                 listed = true;

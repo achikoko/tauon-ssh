@@ -42,6 +42,23 @@ public class LocalOperationException extends TauonOperationException {
         
     }
     
+    public static class AccessDenied extends LocalOperationException {
+        private final String path;
+        
+        public AccessDenied(String path) {
+            this.path = path;
+        }
+        
+        @Override
+        public String getUserMessage() {
+            return FormatUtils.$$(
+                    getBundle().getString("general.local_operation_exception.message.access_denied"),
+                    Map.of("PATH", path)
+            );
+        }
+        
+    }
+    
     public static class FileNotFound extends LocalOperationException {
         private final String path;
         

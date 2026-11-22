@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class FolderView extends JPanel {
@@ -64,7 +65,9 @@ public class FolderView extends JPanel {
         listener.install(this);
 
         table.setIntercellSpacing(new Dimension(0, 0));
-        table.setDragEnabled(true);
+        if (!GraphicsEnvironment.isHeadless()) { // throws HeadlessException otherwise (tests)
+            table.setDragEnabled(true);
+        }
         table.setDropMode(DropMode.ON);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
@@ -172,9 +175,8 @@ public class FolderView extends JPanel {
                     }
                 }
 
-                String s1 = fi1.getPermissionString();
-                String s2 = fi2.getPermissionString();
-                return s1.compareTo(s2);
+                // Local files have no permission string nor owner
+                return Objects.toString(fi1.getPermissionString(), "").compareTo(Objects.toString(fi2.getPermissionString(), ""));
             }
         });
 
@@ -195,9 +197,7 @@ public class FolderView extends JPanel {
                     }
                 }
 
-                String s1 = fi1.getUser();
-                String s2 = fi2.getUser();
-                return s1.compareTo(s2);
+                return Objects.toString(fi1.getUser(), "").compareTo(Objects.toString(fi2.getUser(), ""));
             }
         });
 
@@ -205,9 +205,7 @@ public class FolderView extends JPanel {
 
         this.sort(1, SortOrder.DESCENDING);
 
-        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "Enter");
-        table.getActionMap().put("Enter", new AbstractAction() {
+        Action openFolderAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 FileInfo[] files = getSelectedFiles();
@@ -217,7 +215,10 @@ public class FolderView extends JPanel {
                     }
                 }
             }
-        });
+        };
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "Enter");
+        table.getActionMap().put("Enter", openFolderAction);
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) {
@@ -275,7 +276,16 @@ public class FolderView extends JPanel {
 
         System.out.println("Row height: " + folderViewCellRenderer.getHeight());
 
-        fileList = new JList<>(folderViewModel);
+        // The list view shows the table's rows in the table's (sorted) order and shares its selection, so both views
+        // agree on the order and getSelectedFiles(), menus, Enter and drag and drop work in both
+        fileList = new JList<>(new SortedListModel());
+        fileList.setSelectionModel(table.getSelectionModel());
+        fileList.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "Enter");
+        fileList.getActionMap().put("Enter", openFolderAction);
+        if (!GraphicsEnvironment.isHeadless()) {
+            fileList.setDragEnabled(true);
+        }
+        fileList.setDropMode(DropMode.ON);
         fileList.setBackground(App.skin.getTableBackgroundColor());
         fileList.setLayoutOrientation(JList.HORIZONTAL_WRAP);
         fileList.setVisibleRowCount(-1);
@@ -299,7 +309,7 @@ public class FolderView extends JPanel {
                         return;
                     }
                     if (r == x) {
-                        FileInfo fileInfo = folderViewModel.getItemAt(r);
+                        FileInfo fileInfo = fileList.getModel().getElementAt(r);
                         if (fileInfo.getType() == FileType.DIR || fileInfo.getType() == FileType.DIR_LINK) {
                             listener.navigate(fileInfo.getPath());
                         } else {
@@ -307,11 +317,10 @@ public class FolderView extends JPanel {
                         }
                     }
                 } else if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                    selectRow(e);
-                    System.out.println("called");
+                    selectListRow(e);
                     listener.createMenu(popup, getSelectedFiles());
                     popup.pack();
-                    popup.show(listScroller, e.getX(), e.getY());
+                    popup.show(fileList, e.getX(), e.getY());
                 }
             }
         });
@@ -408,6 +417,7 @@ public class FolderView extends JPanel {
 
     public void setFolderViewTransferHandler(DndTransferHandler transferHandler) {
         this.table.setTransferHandler(transferHandler);
+        this.fileList.setTransferHandler(transferHandler);
     }
 
     public void setShowHiddenFiles(boolean showHiddenFiles) {
@@ -417,6 +427,9 @@ public class FolderView extends JPanel {
 
     private void applyFilter() {
         this.folderViewModel.clear();
+        if (this.files == null) {
+            return; // not listed yet (or the listing failed)
+        }
         if (!this.showHiddenFiles) {
             List<FileInfo> list2 = new ArrayList<>();
             for (FileInfo info : this.files) {
@@ -429,6 +442,31 @@ public class FolderView extends JPanel {
             this.folderViewModel.addAll(this.files);
         }
 
+    }
+
+    JTable getTable() {
+        return table;
+    }
+
+    JList<FileInfo> getFileList() {
+        return fileList;
+    }
+
+    /** The table's rows in view (sorted) order, for the list view. */
+    private class SortedListModel extends AbstractListModel<FileInfo> {
+        SortedListModel() {
+            sorter.addRowSorterListener(e -> fireContentsChanged(this, 0, Math.max(0, getSize() - 1)));
+        }
+
+        @Override
+        public int getSize() {
+            return table.getRowCount();
+        }
+
+        @Override
+        public FileInfo getElementAt(int index) {
+            return folderViewModel.getItemAt(table.convertRowIndexToModel(index));
+        }
     }
 
     public void sort(int index, SortOrder sortOrder) {

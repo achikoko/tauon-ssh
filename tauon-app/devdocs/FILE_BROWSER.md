@@ -56,23 +56,23 @@ the address bar and `NavigationHistory` on the EDT only after the folder was lis
 
 ### Listing and view
 
-- [ ] **L1 — high — Sorting a local folder by Owner throws `NullPointerException`.** Local `FileInfo`s are created
+- [x] **L1 — high — Sorting a local folder by Owner throws `NullPointerException`.** Local `FileInfo`s are created
   with an empty `extra` (`LocalFileSystem.java:67`), so `FileInfo.user` stays `null` (`FileInfo.java:41`) and the
   owner comparator calls `s1.compareTo(s2)` on it (`FolderView.java:200`).
-- [ ] **L2 — medium — An unreadable local folder shows as empty, with no error.** `LocalFileSystem.list`
+- [x] **L2 — medium — An unreadable local folder shows as empty, with no error.** `LocalFileSystem.list`
   returns an empty list when `listFiles()` returns `null` (line 85). A missing path or a file is now reported by
   `LocalFileBrowserView.listFolder`; a folder without read permission still lists as empty.
-- [ ] **L3 — high — List (icon) view acts on the wrong selection.** `FolderView.getSelectedFiles()` reads the
+- [x] **L3 — high — List (icon) view acts on the wrong selection.** `FolderView.getSelectedFiles()` reads the
   *table* selection (line 363) even when the list view is shown; the list's context menu calls `selectRow(e)`
   (the table method, with list coordinates, line 313). Menu actions in list view use a stale/empty selection.
   Enter (line 208) and drag-and-drop (`setFolderViewTransferHandler`, line 413) are only installed on the table.
-- [ ] **L4 — medium — Ctrl+H before the first listing throws `NullPointerException`.** `FolderView.applyFilter`
+- [x] **L4 — medium — Ctrl+H before the first listing throws `NullPointerException`.** `FolderView.applyFilter`
   iterates `this.files`, which is `null` until `setItems` is called (lines 41, 425); also hit when the first
   listing failed.
-- [ ] **L5 — medium — "Open in new tab" in the local browser opens the site's local folder, not the chosen one.**
+- [x] **L5 — medium — "Open in new tab" in the local browser opens the site's local folder, not the chosen one.**
   `LocalFileBrowserView` gives `info.getLocalFolder()` precedence over `initialPath` (lines 43-47); the remote view
   does the opposite. Only the first local tab should start in the site's folder.
-- [ ] **L6 — low — The list view ignores the sort order** (the `JList` uses the model directly, the sorter only
+- [x] **L6 — low — The list view ignores the sort order** (the `JList` uses the model directly, the sorter only
   applies to the table).
 - [x] **L7 — low — Local status text says "remote file(s)"** (`LocalFileBrowserView.java:125`); it is never shown
   anyway (see U1).

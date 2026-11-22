@@ -22,6 +22,10 @@ changed or the bug that was fixed.
 
 ### Fixed
 
+- File browser list (icon) view: it shows the files in the table's sort order and shares its selection, so menus, Enter and drag and drop act on the files selected in the list (`FolderView`).
+- Sorting a local folder by Owner or Permissions no longer throws `NullPointerException`; nor does Ctrl+H (hidden files) before the first listing.
+- A local folder without read permission is reported ("Access denied") instead of shown as empty (`LocalOperationException.AccessDenied`).
+- "Open in new tab" in the local browser opens the chosen folder; the site's local folder is only the default of the first local tab.
 - After a move or copy, the source and target folders are dropped from the listing cache and every remote browser showing them reloads (`FileBrowser.foldersChanged`); a moved file no longer stays listed in its old folder.
 - The sudo prompt of a move says "move" instead of "rename"; a move or copy that still fails with sudo shows "Operation failed".
 - Copy/cut and paste between folders of the same server works: the clipboard returns a deserialized copy without its source view, so paste took the remote files for local ones and tried to upload them (`DndTransferHandler.resolveViews`).

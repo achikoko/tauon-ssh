@@ -170,7 +170,8 @@ public class FileBrowser extends Page {
         init.set(true);
         // Remote on the left, local on the right, side by side
         TabHandle remote = openSshFileBrowserView(null, null);
-        openLocalFileBrowserView(System.getProperty("user.home"), tabs.beside(remote, Location.Side.RIGHT));
+        // null: the site's local folder, or home
+        openLocalFileBrowserView(null, tabs.beside(remote, Location.Side.RIGHT));
     }
 
     @Override
