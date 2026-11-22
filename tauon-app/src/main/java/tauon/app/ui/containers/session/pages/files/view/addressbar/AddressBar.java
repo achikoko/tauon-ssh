@@ -11,9 +11,12 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
+import javax.swing.plaf.basic.ComboPopup;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,6 +33,10 @@ public class AddressBar extends JPanel {
     private JPopupMenu popup;
     private final char separator;
     private final JPanel panBtn2;
+    /** Folder shown, as last set by {@link #setText}. */
+    private String currentPath;
+    /** Most recent folders kept in the dropdown. */
+    static final int HISTORY_SIZE = 20;
 
     public AddressBar(char separator, ActionListener popupTriggeredListener) {
         setLayout(new BorderLayout());
@@ -56,24 +63,26 @@ public class AddressBar extends JPanel {
             }
             
             LOG.debug("Calling action listener. Command: {}", e.getActionCommand());
-            String item = (String) txtAddressBar.getSelectedItem();
+            // Enter in the editor (also after choosing an item with the arrow keys). A mouse pick in the dropdown
+            // only fires "comboBoxChanged": see the list listener below
             if (e.getActionCommand().equals("comboBoxEdited")) {
-                ComboBoxModel<String> model = txtAddressBar.getModel();
-                boolean found = false;
-                for (int i = 0; i < model.getSize(); i++) {
-                    if (model.getElementAt(i).equals(item)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    txtAddressBar.addItem(item);
-                }
-                if (a != null) {
-                    a.actionPerformed(new ActionEvent(this, 0, item));
-                }
+                fireNavigation((String) txtAddressBar.getSelectedItem());
             }
         });
+        // The dropdown list belongs to the combo's popup
+        Object popup = txtAddressBar.getUI().getAccessibleChild(txtAddressBar, 0);
+        if (popup instanceof ComboPopup) {
+            JList<?> list = ((ComboPopup) popup).getList();
+            list.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    int index = list.locationToIndex(e.getPoint());
+                    if (SwingUtilities.isLeftMouseButton(e) && index >= 0) {
+                        fireNavigation(txtAddressBar.getItemAt(index));
+                    }
+                }
+            });
+        }
         
         txtAddressBar.setEditable(true);
         ComboBoxEditor cmdEdit = new BasicComboBoxEditor() {
@@ -143,16 +152,51 @@ public class AddressBar extends JPanel {
         btnEdit.setText("\uf13e");
     }
 
-    public String getText() {
-        return isSelected() ? (String) txtAddressBar.getSelectedItem() : addressBar.getSelectedText();
+    private void fireNavigation(String path) {
+        if (a != null && path != null) {
+            a.actionPerformed(new ActionEvent(this, 0, path));
+        }
     }
 
+    /** @return the text being edited in text mode, the folder shown in path-bar mode */
+    public String getText() {
+        return isSelected() ? (String) txtAddressBar.getEditor().getItem() : currentPath;
+    }
+
+    /** Shows {@code text}, the folder just listed, and puts it first in the dropdown history. */
     public void setText(String text) {
         LOG.debug("Setting text: {}", text);
         updating.set(true);
-        txtAddressBar.setSelectedItem(text);
-        addressBar.setPath(text);
-        updating.set(false);
+        try {
+            currentPath = text;
+            DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) txtAddressBar.getModel();
+            model.removeElement(text);
+            model.insertElementAt(text, 0);
+            while (model.getSize() > HISTORY_SIZE) {
+                model.removeElementAt(model.getSize() - 1);
+            }
+            txtAddressBar.setSelectedItem(text);
+            addressBar.setPath(text);
+        } finally {
+            updating.set(false);
+        }
+    }
+
+    /** @return the dropdown history, most recent first */
+    java.util.List<String> getHistory() {
+        java.util.List<String> items = new java.util.ArrayList<>();
+        for (int i = 0; i < txtAddressBar.getItemCount(); i++) {
+            items.add(txtAddressBar.getItemAt(i));
+        }
+        return items;
+    }
+
+    JComboBox<String> getComboBox() {
+        return txtAddressBar;
+    }
+
+    AddressBarBreadCrumbs getBreadCrumbs() {
+        return addressBar;
     }
 
     public void addActionListener(ActionListener e) {

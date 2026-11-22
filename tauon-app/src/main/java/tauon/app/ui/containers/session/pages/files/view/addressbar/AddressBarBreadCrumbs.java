@@ -59,6 +59,9 @@ public class AddressBarBreadCrumbs extends JPanel {
                         }
                         stringBuilder.append(segments[k]);
                     }
+                    if (!unix && index == 0 && stringBuilder.toString().endsWith(":")) {
+                        stringBuilder.append('\\'); // "C:" alone is the drive's current folder, not its root
+                    }
                     return stringBuilder.toString();
                 }
                 break;
@@ -107,9 +110,6 @@ public class AddressBarBreadCrumbs extends JPanel {
         this.listeners.add(a);
     }
 
-    public String getSelectedText() {
-        return "";
-    }
 
     private void createAddressButtonStyle() {
         Painter<JButton> toolBarButtonPainterNormal = new Painter<JButton>() {

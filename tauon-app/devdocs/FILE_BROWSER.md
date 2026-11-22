@@ -46,12 +46,12 @@ the address bar and `NavigationHistory` on the EDT only after the folder was lis
 
 ### Address bar
 
-- [ ] **A1 — medium — Picking a previous path from the address bar dropdown does nothing.** The combo listener only
+- [x] **A1 — medium — Picking a previous path from the address bar dropdown does nothing.** The combo listener only
   navigates on `"comboBoxEdited"` (Enter in the editor), `AddressBar.java:60`; selecting an item from the list fires
   `"comboBoxChanged"`. The dropdown only ever contains typed paths, never visited ones.
-- [ ] **A2 — low — `AddressBar.getText()` returns `""` in path-bar mode**: `AddressBarBreadCrumbs.getSelectedText()`
+- [x] **A2 — low — `AddressBar.getText()` returns `""` in path-bar mode**: `AddressBarBreadCrumbs.getSelectedText()`
   is hard-coded to `""` (line 111 of that file).
-- [ ] **A3 — low — Windows: the drive breadcrumb navigates to `C:` instead of `C:\`** (`AddressBarBreadCrumbs.calculatePath`
+- [x] **A3 — low — Windows: the drive breadcrumb navigates to `C:` instead of `C:\`** (`AddressBarBreadCrumbs.calculatePath`
   joins segments without a trailing separator), which Windows resolves to the drive's current directory.
 
 ### Listing and view
