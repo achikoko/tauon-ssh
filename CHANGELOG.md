@@ -22,6 +22,8 @@ changed or the bug that was fixed.
 
 ### Fixed
 
+- After a move or copy, the source and target folders are dropped from the listing cache and every remote browser showing them reloads (`FileBrowser.foldersChanged`); a moved file no longer stays listed in its old folder.
+- The sudo prompt of a move says "move" instead of "rename"; a move or copy that still fails with sudo shows "Operation failed".
 - Copy/cut and paste between folders of the same server works: the clipboard returns a deserialized copy without its source view, so paste took the remote files for local ones and tried to upload them (`DndTransferHandler.resolveViews`).
 - File browser: file names are quoted for the remote shell (`ShellUtils.quote`) in delete, move, copy, rename, new file/folder, archive, properties, terminal and remote-to-remote commands; names with `"`, `$`, backticks or `'` no longer run commands or hit other files.
 - Sudo runs the whole command line as root (`sudo sh -c '…'` in `SSHCommandRunner`); a multi-file move/copy ran only its first command with sudo.

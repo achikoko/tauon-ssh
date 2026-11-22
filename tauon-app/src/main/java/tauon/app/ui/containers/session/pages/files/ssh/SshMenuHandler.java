@@ -651,21 +651,43 @@ public class SshMenuHandler {
         return ret;
     }
 
-    public void copy(List<FileInfo> files, String targetFolder) {
-        
+    /**
+     * Copies {@code files} into {@code targetFolder} on this server.
+     *
+     * @param sourceBrowser the file browser they come from (this one, or another session of the same site)
+     */
+    public void copy(List<FileInfo> files, String targetFolder, FileBrowser sourceBrowser) {
         fileBrowser.getHolder().submitSSHOperation((guiHandle, instance) -> {
             if (fileOperations.copyTo(guiHandle, instance, files, targetFolder, fileBrowserView.getFileSystem())) {
-                fileBrowserView.render(targetFolder);
+                foldersChanged(List.of(targetFolder), sourceBrowser);
             }
         });
     }
 
-    public void move(List<FileInfo> files, String targetFolder) {
+    /**
+     * Moves {@code files} into {@code targetFolder} on this server.
+     *
+     * @param sourceBrowser the file browser they come from (this one, or another session of the same site)
+     */
+    public void move(List<FileInfo> files, String targetFolder, FileBrowser sourceBrowser) {
         fileBrowser.getHolder().submitSSHOperation((guiHandle, instance) -> {
             if (fileOperations.moveTo(guiHandle, instance, files, targetFolder, fileBrowserView.getFileSystem())) {
-                fileBrowserView.render(targetFolder);
+                // The source folders changed too: no browser may keep listing the moved files
+                List<String> folders = new ArrayList<>();
+                folders.add(targetFolder);
+                for (FileInfo f : files) {
+                    folders.add(PathUtils.getParent(f.getPath()));
+                }
+                foldersChanged(folders, sourceBrowser);
             }
         });
+    }
+
+    private void foldersChanged(List<String> folders, FileBrowser sourceBrowser) {
+        fileBrowser.foldersChanged(folders);
+        if (sourceBrowser != null && sourceBrowser != fileBrowser) {
+            sourceBrowser.foldersChanged(folders);
+        }
     }
 
     private void addToFavourites() {

@@ -210,9 +210,9 @@ public class SshFileBrowserView extends AbstractFileBrowserView {
                 }
 
                 if (transferData.getTransferAction() == DndTransferData.TransferAction.Copy) {
-                    menuHandler.copy(Arrays.asList(transferData.getFiles()), getCurrentDirectory());
+                    menuHandler.copy(Arrays.asList(transferData.getFiles()), getCurrentDirectory(), source.getFileBrowser());
                 } else {
-                    menuHandler.move(Arrays.asList(transferData.getFiles()), getCurrentDirectory());
+                    menuHandler.move(Arrays.asList(transferData.getFiles()), getCurrentDirectory(), source.getFileBrowser());
                 }
             }
 //            else if (sourceFs instanceof SshFileSystem

@@ -24,14 +24,17 @@ import tauon.app.ui.containers.session.SessionContentPanel;
 import tauon.app.ui.containers.session.pages.files.local.LocalFileBrowserView;
 import tauon.app.ui.containers.session.pages.files.ssh.SshFileBrowserView;
 import tauon.app.ui.containers.session.pages.files.transfer.DndTransferData;
+import tauon.app.util.misc.PathUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static tauon.app.services.LanguageService.getBundle;
@@ -42,7 +45,8 @@ public class FileBrowser extends Page {
     private final ClosableTabbedPanel tabs;
     private final SessionContentPanel holder;
     private final SiteInfo info;
-    private final Map<String, List<FileInfo>> sshDirCache = new HashMap<>();
+    /** Remote folder listings by path; read and written from the SSH worker and the EDT. */
+    private final Map<String, List<FileInfo>> sshDirCache = new ConcurrentHashMap<>();
     private final AtomicBoolean init = new AtomicBoolean(false);
     private final JPopupMenu popup;
     private final Map<UUID, AbstractFileBrowserView> viewList = new HashMap<>();
@@ -315,6 +319,23 @@ public class FileBrowser extends Page {
             getHolder().getAppWindow().startFileTransfer(transfer);
         }
         
+    }
+
+    /**
+     * The contents of {@code folders} changed (files moved, copied...): drops their cached listings and reloads the
+     * remote browsers showing them, so none keeps showing files that are gone. Callable from any thread.
+     */
+    public void foldersChanged(Collection<String> folders) {
+        sshDirCache.keySet().removeIf(cached -> folders.stream().anyMatch(f -> PathUtils.isSamePath(f, cached)));
+        SwingUtilities.invokeLater(() -> {
+            for (AbstractFileBrowserView view : viewList.values()) {
+                String shown = view.getCurrentDirectory();
+                if (view instanceof SshFileBrowserView && shown != null
+                        && folders.stream().anyMatch(f -> PathUtils.isSamePath(f, shown))) {
+                    view.reload();
+                }
+            }
+        });
     }
 
     public void refreshViewMode() {

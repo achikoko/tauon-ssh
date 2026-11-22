@@ -83,7 +83,7 @@ public class SshFileOperations {
             // TODO i18n
             if (!SettingsConfigManager.getSettings().isPromptForSudo()
                     || JOptionPane.showConfirmDialog(null,
-                    "Access denied, rename using sudo?", getBundle().getString("general.message.ask_use_sudo"),
+                    getBundle().getString("app.files.message.move_with_sudo"), getBundle().getString("general.message.ask_use_sudo"),
                     JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
                 return false;
             }
@@ -94,10 +94,7 @@ public class SshFileOperations {
             int ret = sshCommandRunner.getResult();
             
             if (ret != 0) {
-                // TODO use guiHandle
-//            if (!instance.isSessionClosed()) {
-//                JOptionPane.showMessageDialog(null, getBundle().getString("general.message.operation_failed"));
-//            }
+                showOperationFailed();
             }
             
             return ret == 0;
@@ -150,7 +147,7 @@ public class SshFileOperations {
             }
             if (!SettingsConfigManager.getSettings().isPromptForSudo()
                     || JOptionPane.showConfirmDialog(null,
-                    "Access denied, copy using sudo?", getBundle().getString("general.message.ask_use_sudo"),
+                    getBundle().getString("app.files.message.copy_with_sudo"), getBundle().getString("general.message.ask_use_sudo"),
                     JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
 //                if (!instance.isSessionClosed()) {
 //                    JOptionPane.showMessageDialog(null, getBundle().getString("general.message.operation_failed"));
@@ -165,16 +162,18 @@ public class SshFileOperations {
             int ret = sshCommandRunner.getResult();
             
             if (ret != 0) {
-            
-//            if (!instance.isSessionClosed()) {
-//                JOptionPane.showMessageDialog(null, getBundle().getString("general.message.operation_failed"));
-//            }
+                showOperationFailed();
             }
 
             return ret == 0;
         } else {
             return true;
         }
+    }
+
+    private static void showOperationFailed() {
+        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
+                getBundle().getString("general.message.operation_failed")));
     }
 
     /**
